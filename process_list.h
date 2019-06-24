@@ -1,2 +1,2 @@
-void freeList();
-void* addList(void* ptr);
+void freeProcessList();
+void* addProcessList(void* ptr);

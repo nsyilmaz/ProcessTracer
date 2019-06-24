@@ -207,9 +207,17 @@ int umoven_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, char *
 
 char* pathForPtrace = NULL;
 
+
 char responseHeader[] = "HTTP/1.1 200 OK\r\n"
 "Content-Type: text/html; charset=UTF-8\r\n\r\n"
 "<!DOCTYPE html>\n"
+"<html>\n"
+"<head>\n"
+"<title>Process Tracer</title>\n"
+"</head>\n"
+"<body>\n";
+
+char htmlHead[] = "<!DOCTYPE html>\n"
 "<html>\n"
 "<head>\n"
 "<title>Process Tracer</title>\n"

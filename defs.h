@@ -73,7 +73,7 @@ typedef struct ioctlent {
 
 /* To force NOMMU build, set to 1 */
 #define NOMMU_SYSTEM 0
-
+/*
 #ifndef ERESTARTSYS
 # define ERESTARTSYS    512
 #endif
@@ -86,7 +86,9 @@ typedef struct ioctlent {
 #ifndef ERESTART_RESTARTBLOCK
 # define ERESTART_RESTARTBLOCK 516
 #endif
+*/
 
+/*
 #define PERSONALITY0_WORDSIZE  SIZEOF_LONG
 #define PERSONALITY0_KLONGSIZE SIZEOF_KERNEL_LONG_T
 #define PERSONALITY0_INCLUDE_PRINTERS_DECLS "native_printer_decls.h"
@@ -127,6 +129,7 @@ typedef struct ioctlent {
 # define PERSONALITY2_INCLUDE_FUNCS "empty.h"
 # define HAVE_PERSONALITY_2_MPERS 0
 #endif
+*/
 
 #ifdef WORDS_BIGENDIAN
 # define is_bigendian true

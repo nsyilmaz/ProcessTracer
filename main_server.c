@@ -4,8 +4,8 @@
 
 
 int main(void){
-    pthread_t pListThread;
-    int err1 = pthread_create(&pListThread,NULL,addList,NULL);
+    pthread_t processListThread;
+    int err1 = pthread_create(&processListThread,NULL,addProcessList,NULL);
     if(err1 != 0){
       perror("AddList Error:");
       exit(0);
@@ -19,7 +19,7 @@ int main(void){
     int on=1;
     int *connfd = malloc(sizeof(int));
     int threadCount = 0;
-    pthread_t *threads = malloc(sizeof(pthread_t));
+    pthread_t *httpThreads = malloc(sizeof(pthread_t));
     fd_server = socket(AF_INET,SOCK_STREAM,0); // create socket
     if(fd_server < 0){
       perror("socket error:");
@@ -41,20 +41,20 @@ int main(void){
     	if (connfd[threadCount] < 0) {
     		perror("Accept Error");
     	}
-    	pthread_create(&threads[threadCount], NULL, requestHandler, &connfd[threadCount]);		//create a thread and receive data
-    	pthread_join(threads[threadCount], (void**) &returnValue);												//finish the thread;
+    	pthread_create(&httpThreads[threadCount], NULL, requestHandler, &connfd[threadCount]);		//create a thread and receive data
+    	pthread_join(httpThreads[threadCount], (void**) &returnValue);												//finish the thread;
       if(*returnValue == 1){
         break;
       }
     	threadCount++;
       connfd = realloc(connfd,(threadCount+1)*sizeof(int));
-      threads = realloc(threads,(threadCount+1)*sizeof(pthread_t));
+      httpThreads = realloc(httpThreads,(threadCount+1)*sizeof(pthread_t));
     }
     close(fd_server);
     free(connfd);
-    free(threads);
+    free(httpThreads);
     connfd = NULL;
-    threads = NULL;
-    pthread_join(pListThread,NULL); //Bitmesini bekliyoruz ?
+    httpThreads = NULL;
+    pthread_join(processListThread,NULL); //Bitmesini bekliyoruz ?
     return 0;
 }

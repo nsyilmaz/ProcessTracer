@@ -4,7 +4,7 @@
 #include "request_handler.h"
 
 //free the whole process list
-void freeList(){
+void freeProcessList(){
   if(pList.array != NULL){
     for(int i=0;i<pList.length;i++){
       free(pList.array[i].name);
@@ -25,7 +25,7 @@ void freeList(){
 }
 
 // Generate the process list
-void* addList(void* ptr){
+void* addProcessList(void* ptr){
   struct timespec ts;
   ts.tv_sec=0;
   ts.tv_nsec=10000000; // 10 milliseconds
@@ -38,7 +38,7 @@ void* addList(void* ptr){
       break;
     }
     else{
-      freeList(); // first delete all list
+      freeProcessList(); // first delete all list
       int firstTime = 0;
       struct dirent *de;
       DIR *dr = opendir("/proc"); // Open proc directory and visit all directories

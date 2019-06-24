@@ -3,6 +3,9 @@
 #include "process_list.h"
 #include "ptrace.h"
 #include "defs.h"
+
+
+
 // AJAX CALL
 void* requestHandler(void *ptr){
         int *fd_client = (int *)ptr;
@@ -13,9 +16,13 @@ void* requestHandler(void *ptr){
         read(*fd_client, buf, 2047);
         printf("%s\n",buf);
         if(!strncmp(buf, "GET /favicon.ico",16)){
+                write(*fd_client,responseHeader,strlen(responseHeader));
+                write(*fd_client," ",1);
+		/*
           fdimg = open("secrove.ico", O_RDONLY);
           sendfile(*fd_client,fdimg,NULL,372000); // size, favicon size
           close(fdimg);
+		*/
         }
         else if(!strncmp(buf,"POST /",6)){
           // xml http request header ayrımı ajax request geldi mi geldiyse orada thread create edilecek
@@ -140,6 +147,7 @@ void* requestHandler(void *ptr){
                 break;
               }
             }
+                write(*fd_client,responseHeader,strlen(responseHeader));
 	          write(*fd_client,tableStart,strlen(tableStart));
             for(int i=0;i<pList.length;i++){
                 write(*fd_client,"<tr>\n",5);

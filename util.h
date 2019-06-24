@@ -60,7 +60,6 @@ static ssize_t strace_process_vm_readv(pid_t pid,
 
 int umovestr_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, void *laddr);
 
-
 int umoven_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, char *laddr);
 
 int execvArraySize(char* cursor);
@@ -82,8 +81,8 @@ struct process{
 };
 
 struct processList{
-int length;
-struct process* array;
+  int length;
+  struct process* array;
 };
 
 struct syscallRegs{
@@ -93,8 +92,8 @@ struct syscallRegs{
 };
 
 struct syscallList{
-    int length;
-    struct syscallRegs* array;
+  int length;
+  struct syscallRegs* array;
 };
 
 
@@ -130,7 +129,6 @@ extern char tableEnd[];
 
 int checkInt(char buffer[]);
 
-int umoven_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, char *laddr);
 
 void cats(char **str, const char *str2);
 
