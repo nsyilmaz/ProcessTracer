@@ -209,15 +209,9 @@ char* pathForPtrace = NULL;
 
 
 char responseHeader[] = "HTTP/1.1 200 OK\r\n"
-"Content-Type: text/html; charset=UTF-8\r\n\r\n"
-"<!DOCTYPE html>\n"
-"<html>\n"
-"<head>\n"
-"<title>Process Tracer</title>\n"
-"</head>\n"
-"<body>\n";
+"Content-Type: text/html; charset=UTF-8\r\n\r\n";
 
-char htmlHead[] = "<!DOCTYPE html>\n"
+char htmlStart[] = "<!DOCTYPE html>\n"
 "<html>\n"
 "<head>\n"
 "<title>Process Tracer</title>\n"
@@ -228,7 +222,7 @@ struct AJAXList* headSysCallList;
 
 int counterForDeneme = 0;
 
-char responseEnd[] = "<button onclick = 'nextSyscall()'> Next </button>\n"
+char xmlSysCallScript[] =
 "<div id=\"ajax-content\">\n"
 "</div>\n"
 "<script>\n"
@@ -242,13 +236,13 @@ char responseEnd[] = "<button onclick = 'nextSyscall()'> Next </button>\n"
 "	}\n"
 "}\n"
 "};\n"
-"</script>\n"
+"</script>\n";
+
+char htmlEnd[]=
 "</body>\n"
 "</html>\n";
 
-char responseBuffer[] =  "HTTP/1.1 200 OK\r\n"
-"Content-Type: text/html; charset=UTF-8\r\n\r\n"
-"<!DOCTYPE html>\n"
+char htmlStartWithCSS[] ="<!DOCTYPE html>\n"
 "<html>\n"
 "<head>\n"
 "<style>\n"
@@ -262,8 +256,8 @@ char responseBuffer[] =  "HTTP/1.1 200 OK\r\n"
 "}\n"
 "</style>\n"
 "</head>\n"
-"<body>\n"
-"<form action=\"/\" method=\"post\">\n"
+"<body>\n";
+char mainPanelHTML[]="<form action=\"/\" method=\"post\">\n"
 "<input type=\"hidden\" id=\"execution\" name=\"operation\" value=\"0\">\n"
 "<button id=\"path\" type=\"submit\">Exit</button>\n"
 "</form>\n"
@@ -272,19 +266,7 @@ char responseBuffer[] =  "HTTP/1.1 200 OK\r\n"
 "<button id=\"path\" type=\"submit\">Submit</button>\n"
 "</form>"
 "<form action=\"/\" method=\"post\">\n"
-"<div id='process-table'>\n"
-"<table  width=\"50%\" id=\"tab\" style=\"margin-left:200px;\">\n"
-"<thead>\n"
-"<tr>\n"
-  "<th>Processes</th>\n"
-  "<th> PID</th>\n"
-	"<th> PPID </th>\n"
-  "<th> Owner </th>\n"
-    "<th> Command Line Arguments </th>\n"
-  "<th> Choose </th>"
-"</tr>\n"
-"</thead> \n"
-"<tbody id=\"tablediv\">\n";
+"<div id='process-table'>\n";
 
 char tableStart[] = "<table  width=\"50%\" id=\"tab\" style=\"margin-left:200px;\">\n"
 "<thead>\n"
@@ -301,14 +283,14 @@ char tableStart[] = "<table  width=\"50%\" id=\"tab\" style=\"margin-left:200px;
 
 char tableEnd[] = "<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
               "</tbody>\n"
-              "</table>\n";
-
-char end[] =  "<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
-              "</tbody>\n"
               "</table>\n"
-	      "</div>\n"
-              "</form>\n"
-              "</body>\n"
+							"<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
+							              "</tbody>\n"
+							              "</table>\n"
+								      "</div>\n"
+							              "</form>\n";
+
+char xmlProcessListScript[] =
 	      "<script>\n"
 	      "setInterval(function(){ \n"
               "var myRequest = new XMLHttpRequest(); \n"
@@ -320,8 +302,7 @@ char end[] =  "<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
 	      "}\n"
 	      "}\n"
 	      "},5000);\n"
-	      "</script>\n"
-              "</html>\n";
+	      "</script>\n";
 
 struct processList pList = {0,NULL};
 struct syscallList sList = {0,NULL};

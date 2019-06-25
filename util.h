@@ -67,10 +67,11 @@ int execvArraySize(char* cursor);
 
 const char *syscallName(long call);
 
-extern char responseBuffer[];
+extern char htmlStartWithCSS[];
 extern char end[];
 extern char responseHeader[];
 extern char responseEnd[];
+extern char mainPanelHTML[];
 
 struct process{
   char *pid;
@@ -126,6 +127,14 @@ int stringSplit(char* c);
 extern char tableStart[];
 
 extern char tableEnd[];
+
+extern char htmlEnd[];
+
+extern char htmlStart[];
+
+extern char xmlSysCallScript[];
+
+extern char xmlProcessListScript[];
 
 int checkInt(char buffer[]);
 

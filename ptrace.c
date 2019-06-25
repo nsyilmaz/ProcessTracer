@@ -33,6 +33,10 @@
 #include "process_list.h"
 #include "request_handler.h"
 #include "util.h"
+#include "sys_write.h"
+#include "sys_open.h"
+#include "sys_read.h"
+#include "sys_close.h"
 
 int flagForReady = 1;
 int attachReadyFlag = 0;
@@ -50,7 +54,7 @@ void deleteSyscallList(){
       }
       free(sList.array);
       sList.array = NULL;
-      sList.length = 0; 
+      sList.length = 0;
 }
 
 void* ptraceAttach(void *ptr){
@@ -110,12 +114,16 @@ void* ptraceFork(void *ptr){
 void syscallNext(){
   int in_call = 0;
   long orig_eax;
-  int insyscall =0;
-  int syscallwritein = 0;
-  int open_in_flag =0;
-  int close_in_flag =0;
+  int writeEntryExitFlag =0;
+  int readEntryExitFlag = 0;
+  int openEntryExitFlag =0;
+  int closeEntryExitFlag =0;
   int firstTime = 1;
   int status;
+  struct sys_writeReturn writeReturn;
+  struct sys_readReturn readReturn;
+  struct sys_openReturn openReturn;
+  struct sys_closeReturn closeReturn;
   unsigned char buffer[BUFFER_SIZE];
   struct timespec ts;
   struct iovec local ;
@@ -131,49 +139,33 @@ void syscallNext(){
           }
         orig_eax = ptrace(PTRACE_PEEKUSER, traced_process, sizeof(long) * ORIG_RAX, NULL);
         if(orig_eax == SYS_write){
-          if(insyscall == 0) {
-           /* Syscall entry */
-                insyscall = 1;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime =0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
-                sList.array[sList.length].entry_exit_flag = 0;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                sList.array[sList.length].data = malloc(sizeof(char)*sList.array[sList.length].regs->rdx+1);
-                if(sList.array[sList.length].regs->rdx){
-                  local.iov_base = sList.array[sList.length].data;
-                  local.iov_len = sList.array[sList.length].regs->rdx;
-                  remote.iov_base = (void *) sList.array[sList.length].regs->rsi;
-                  remote.iov_len = sList.array[sList.length].regs->rdx;
-                  process_vm_readv(traced_process, &local, 1, &remote, 1, 0);
-                  //sList.array[sList.length ].data = malloc(sizeof(char)*sList.array[sList.length].regs->rdx);
-                //  for(int i=0;i<sList.array[sList.length].regs->rdx;i++){
-                //    sList.array[sList.length].data[i] = buffer[i];
-                //  }
-                  sList.array[sList.length].data[sList.array[sList.length].regs->rdx] = '\0';
-                }
-              }
-              else { /* Syscall exit */
-                insyscall = 0;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
-                sList.array[sList.length].entry_exit_flag = 1;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                sList.array[sList.length].data = malloc(sizeof(char)*sList.array[sList.length].regs->rdx+1);
-                if(sList.array[sList.length].regs->rdx){
-                  local.iov_base = sList.array[sList.length].data;
-                  local.iov_len = sList.array[sList.length].regs->rdx;
-                  remote.iov_base = (void *) sList.array[sList.length].regs->rsi;
-                  remote.iov_len = sList.array[sList.length].regs->rdx;
-                  process_vm_readv(traced_process, &local, 1, &remote, 1, 0);
-                  sList.array[sList.length].data[sList.array[sList.length].regs->rdx] = '\0';
-                }
+          if(!firstTime){
+            sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
+          }
+          firstTime =0;
+          sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
+          ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
+          sys_write(traced_process,sList.array[sList.length].regs,&writeReturn);
+          if(writeReturn.length){
+            sList.array[sList.length].data=malloc(sizeof(char)*writeReturn.length+1);
+            for(int i=0;i<writeReturn.length;i++){
+              sList.array[sList.length].data[i] = writeReturn.data[i];
             }
+            sList.array[sList.length].data[writeReturn.length] = '\0';
+          }
+          if(writeEntryExitFlag == 0) {
+                // Syscall entry
+                writeEntryExitFlag = 1;
+                sList.array[sList.length].entry_exit_flag = 0;
+              }
+          else {
+                // Syscall exit
+                writeEntryExitFlag = 0;
+                sList.array[sList.length].entry_exit_flag = 1;
+            }
+          writeReturn.length = 0;
+          free(writeReturn.data);
+          writeReturn.data = NULL;
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
@@ -184,58 +176,32 @@ void syscallNext(){
           }
         }
         else if(orig_eax == SYS_openat){
-          unsigned char buffer[BUFFER_SIZE];
-          int lengthOfFileName = 0;
-          char *bufferPointer = buffer;
-          if(open_in_flag == 0) {
-           /* Syscall entry */
-                open_in_flag = 1;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
-                sList.array[sList.length].entry_exit_flag = 0;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                local.iov_base = buffer;
-                local.iov_len = BUFFER_SIZE;
-                remote.iov_base = (void *) sList.array[sList.length].regs->rsi;
-                remote.iov_len = BUFFER_SIZE;
-                process_vm_readv(traced_process, &local, 1, &remote, 1, 0);
-                while(*bufferPointer != '\0'){
-                  lengthOfFileName++;
-                  bufferPointer++;
-                }
-                sList.array[sList.length].data = malloc(sizeof(char)*lengthOfFileName+1);
-                for(int i=0;i<lengthOfFileName;i++){
-                    sList.array[sList.length].data[i] = buffer[i];
-                }
-                sList.array[sList.length].data[lengthOfFileName] = '\0';
-              }
-              else { /* Syscall exit */
-                open_in_flag = 0;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
-                sList.array[sList.length].entry_exit_flag = 1;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                local.iov_base = buffer;
-                local.iov_len = BUFFER_SIZE;
-                remote.iov_base = (void *) sList.array[sList.length].regs->rsi;
-                remote.iov_len = BUFFER_SIZE;
-                process_vm_readv(traced_process, &local, 1, &remote, 1, 0);
-                while(*bufferPointer != '\0'){
-                  lengthOfFileName++;
-                  bufferPointer++;
-                }
-                sList.array[sList.length].data = malloc(sizeof(char)*lengthOfFileName+1);
-                for(int i=0;i<lengthOfFileName;i++){
-                    sList.array[sList.length].data[i] = buffer[i];
-                }
-                sList.array[sList.length].data[lengthOfFileName] = '\0';
+          if(!firstTime){
+            sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
+          }
+          firstTime =0;
+          sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
+          ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
+          sys_open(traced_process,sList.array[sList.length].regs,&openReturn);
+          if(openReturn.length){
+            sList.array[sList.length].data = malloc(sizeof(char)*openReturn.length+1);
+            for(int i=0;i<openReturn.length;i++){
+                sList.array[sList.length].data[i] = openReturn.fileName[i];
             }
+            sList.array[sList.length].data[openReturn.length] = '\0';
+          }
+          if(openEntryExitFlag == 0) {
+           // Syscall entry
+                openEntryExitFlag = 1;
+                sList.array[sList.length].entry_exit_flag = 0;
+          }
+          else { // Syscall exit
+                openEntryExitFlag = 0;
+                sList.array[sList.length].entry_exit_flag = 1;
+          }
+          openReturn.length = 0;
+          free(openReturn.fileName);
+          openReturn.fileName = NULL;
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
@@ -246,29 +212,24 @@ void syscallNext(){
           }
         }
         else if(orig_eax == SYS_close){
-          if(close_in_flag == 0) {
+            if(!firstTime){
+              sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
+            }
+            firstTime = 0;
+            sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
+            ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
+            sys_close(traced_process,sList.array[sList.length].regs,&closeReturn);
+            sList.array[sList.length].data = NULL;
+          if(closeEntryExitFlag == 0) {
            /* Syscall entry */
-                close_in_flag = 1;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
+                closeEntryExitFlag = 1;
                 sList.array[sList.length].entry_exit_flag = 0;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                sList.array[sList.length].data = NULL;
               }
               else { /* Syscall exit */
-                close_in_flag = 0;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
+                closeEntryExitFlag = 0;
                 sList.array[sList.length].entry_exit_flag = 1;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                sList.array[sList.length].data = NULL;
             }
+          closeReturn.fileDescriptor = 0;
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
@@ -279,54 +240,30 @@ void syscallNext(){
           }
         }
         else if(orig_eax == SYS_read){
-          if(syscallwritein == 0) {
-           /* Syscall entry */
-                syscallwritein = 1;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
-                sList.array[sList.length].entry_exit_flag = 0;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                sList.array[sList.length].data = malloc(sizeof(char)*sList.array[sList.length].regs->rax+1);
-                if(sList.array[sList.length].regs->rax && sList.array[sList.length].regs->rax < BUFFER_SIZE){
-                  local.iov_base = sList.array[sList.length].data;
-                  local.iov_len = sList.array[sList.length].regs->rax;
-                  remote.iov_base = (void *) sList.array[sList.length].regs->rsi;
-                  remote.iov_len = sList.array[sList.length].regs->rax;
-                  process_vm_readv(traced_process, &local, 1, &remote, 1, 0);
-                  //sList.array[sList.length ].data = malloc(sizeof(char)*sList.array[sList.length].regs->rdx);
-                //  for(int i=0;i<sList.array[sList.length].regs->rdx;i++){
-                //    sList.array[sList.length].data[i] = buffer[i];
-                //  }
-                  sList.array[sList.length].data[sList.array[sList.length].regs->rax] = '\0';
-                }
-
-              }
-              else { /* Syscall exit */
-                syscallwritein = 0;
-                if(!firstTime){
-                  sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
-                }
-                firstTime = 0;
-                sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
-                sList.array[sList.length].entry_exit_flag = 1;
-                ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
-                sList.array[sList.length].data = malloc(sizeof(char)*sList.array[sList.length].regs->rax+1);
-                if(sList.array[sList.length].regs->rax){
-                  local.iov_base = sList.array[sList.length].data;
-                  local.iov_len = sList.array[sList.length].regs->rax;
-                  remote.iov_base = (void *) sList.array[sList.length].regs->rsi;
-                  remote.iov_len = sList.array[sList.length].regs->rax;
-                  process_vm_readv(traced_process, &local, 1, &remote, 1, 0);
-              /*    sList.array[sList.length].data = malloc(sizeof(char)*sList.array[sList.length].regs->rdx+1);
-                  for(int i=0;i<sList.array[sList.length].regs->rdx;i++){
-                    sList.array[sList.length].data[i] = buffer[i];
-                  } */
-                  sList.array[sList.length].data[sList.array[sList.length].regs->rax] = '\0';
-                }
+          if(!firstTime){
+            sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
+          }
+          firstTime = 0;
+          sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
+          ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
+          sys_read(traced_process,sList.array[sList.length].regs,&readReturn);
+            sList.array[sList.length].data=malloc(sizeof(char)*readReturn.length+1);
+            for(int i=0;i<readReturn.length;i++){
+              sList.array[sList.length].data[i] = readReturn.data[i];
             }
+            sList.array[sList.length].data[readReturn.length] = '\0';
+          if(readEntryExitFlag == 0) {
+           /* Syscall entry */
+                readEntryExitFlag = 1;
+                sList.array[sList.length].entry_exit_flag = 0;
+          }
+          else { /* Syscall exit */
+                readEntryExitFlag = 0;
+                sList.array[sList.length].entry_exit_flag = 1;
+              }
+          readReturn.length = 0;
+          free(readReturn.data);
+          readReturn.data = NULL;
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
@@ -339,33 +276,3 @@ void syscallNext(){
     ptrace(PTRACE_SYSCALL, traced_process,NULL, NULL);
   }
 }
-/*
-geldi
-
-register orig_eax: 162 geldi bu sleep
-
-register orig_eax: 0 geldi
-
-register orig_eax: 0 geldi
-
-register orig_eax: 197 geldi
-
-register orig_eax: 197 geldi
-
-register orig_eax: 45 geldi
-
-register orig_eax: 45 geldi
-
-register orig_eax: 45 geldi
-
-register orig_eax: 45 geldi
-
-register orig_eax: 45 geldi
-
-register orig_eax: 45 geldioldu
-
-register orig_eax: 4 geldioldu
-
-register orig_eax: 4 geldi
-
-register orig_eax: 252 */

@@ -43,6 +43,7 @@ void* requestHandler(void *ptr){
               }
               else{
                 write(*fd_client,responseHeader,strlen(responseHeader));
+                write(*fd_client,htmlStart,strlen(htmlStart));
                 sprintf(buffer,"<p> Name of Process: %s </p>\n",chosenProcess->name);
                 write(*fd_client,buffer,strlen(buffer));
                 sprintf(buffer,"<p>Process Id: %s </p>\n",chosenProcess->pid);
@@ -52,13 +53,16 @@ void* requestHandler(void *ptr){
                 sprintf(buffer,"<p>Process Owner: %s </p>\n",chosenProcess->user);
                 write(*fd_client,buffer,strlen(buffer));
                 if(strlen(chosenProcess->cmdline) == 0){
-                  sprintf(buffer,"<p>CommandLineArguments: EMPTY </p>\n");
+                  sprintf(buffer,"<p>CommandLineArguments: </p>\n");
                 }
                 else{
                   sprintf(buffer,"<p>CommandLineArguments: %s </p>\n",chosenProcess->cmdline);
                 }
                 write(*fd_client,buffer,strlen(buffer));
-                write(*fd_client,responseEnd,strlen(responseEnd));
+                sprintf(buffer,"<button onclick = 'nextSyscall()'> Next </button>\n");
+                write(*fd_client,buffer,strlen(buffer));
+                write(*fd_client,xmlSysCallScript,strlen(xmlSysCallScript));
+                write(*fd_client,htmlEnd,strlen(htmlEnd));
                 traced_process = atoi(pid);
                 if(traced_process >= 0){
 		                flagForNext = 0;
@@ -81,9 +85,13 @@ void* requestHandler(void *ptr){
                  // response + yeni thread oluşumu path için process çalıştırılacak
 		                isStartedPtrace = 1;
                     write(*fd_client,responseHeader,strlen(responseHeader));
+                    write(*fd_client,htmlStart,strlen(htmlStart));
                     sprintf(buffer,"<p>Given Path: %s </p>\n",path);
                     write(*fd_client,buffer,strlen(buffer));
-                    write(*fd_client,responseEnd,strlen(responseEnd));
+                    sprintf(buffer,"<button onclick = 'nextSyscall()'> Next </button>\n");
+                    write(*fd_client,buffer,strlen(buffer));
+                    write(*fd_client,xmlSysCallScript,strlen(xmlSysCallScript));
+                    write(*fd_client,htmlEnd,strlen(htmlEnd));
                     int err = pthread_create(&threadFork,NULL,ptraceFork,path);
                     flagForNext = 0;
                     if(err != 0){
@@ -94,6 +102,8 @@ void* requestHandler(void *ptr){
 	          }
         }
         else if(strstr(buf, "xml=1")){ // next butonu
+                write(*fd_client,responseHeader,strlen(responseHeader));
+                write(*fd_client,htmlStart,strlen(htmlStart));
                 for(int i=sList.length-1;i>=0;i--){
                   if(sList.array[i].regs->orig_eax == SYS_write){
                     sprintf(buffer,"<p>SYS_WRITE</p>");
@@ -138,6 +148,7 @@ void* requestHandler(void *ptr){
                       write(*fd_client,buffer,strlen(buffer));
                   }
                 }
+                write(*fd_client,htmlEnd,strlen(htmlEnd));
                 flagForNext = 1;
         }
         else if(strstr(buf,"xml=2")){
@@ -147,7 +158,8 @@ void* requestHandler(void *ptr){
                 break;
               }
             }
-                write(*fd_client,responseHeader,strlen(responseHeader));
+            write(*fd_client,responseHeader,strlen(responseHeader));
+            write(*fd_client,htmlStart,strlen(htmlStart));
 	          write(*fd_client,tableStart,strlen(tableStart));
             for(int i=0;i<pList.length;i++){
                 write(*fd_client,"<tr>\n",5);
@@ -170,7 +182,9 @@ void* requestHandler(void *ptr){
             write(*fd_client,buffer,strlen(buffer));
             write(*fd_client,"</tr>\n",6);
             }
-	           write(*fd_client,tableEnd,strlen(tableEnd));
+            write(*fd_client,tableEnd,strlen(tableEnd));
+	          write(*fd_client,xmlProcessListScript,strlen(xmlProcessListScript));
+            write(*fd_client,htmlEnd,strlen(htmlEnd));
         }
         else if(strstr(buf, "operation=")){
             char *c = strstr(buf,"operation=")+10;
@@ -193,7 +207,10 @@ void* requestHandler(void *ptr){
                   break;
                 }
             }
-            write(*fd_client,responseBuffer,strlen(responseBuffer));
+            write(*fd_client,responseHeader,strlen(responseHeader));
+            write(*fd_client,htmlStartWithCSS,strlen(htmlStartWithCSS));
+            write(*fd_client,mainPanelHTML,strlen(mainPanelHTML));
+            write(*fd_client,tableStart,strlen(tableStart));
             for(int i=0;i<pList.length;i++){
                 write(*fd_client,"<tr>\n",5);
                 sprintf(buffer,"<td> %s </td> \n",pList.array[i].name);
@@ -215,7 +232,9 @@ void* requestHandler(void *ptr){
                 write(*fd_client,buffer,strlen(buffer));
                 write(*fd_client,"</tr>\n",6);
             }
-            write(*fd_client,end,strlen(end));
+            write(*fd_client,tableEnd,strlen(tableEnd));
+            write(*fd_client,xmlProcessListScript,strlen(xmlProcessListScript));
+            write(*fd_client,htmlEnd,strlen(htmlEnd));
   			}
         close(*fd_client);
         returnForRequestHandler = 0;
