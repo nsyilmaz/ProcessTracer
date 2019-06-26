@@ -34,7 +34,7 @@
 #include <time.h>
 #include "kernel_types.h"
 #define _GNU_SOURCE
-
+#include <sys/uio.h>
 
 
 #ifndef HAVE_PROCESS_VM_READV
@@ -55,6 +55,26 @@ static ssize_t strace_process_vm_readv(pid_t pid,
                        (long) pid, lvec, liovcnt, rvec, riovcnt, flags);
 }
 # define process_vm_readv strace_process_vm_readv
+#endif /* !HAVE_PROCESS_VM_READV */
+
+#ifndef HAVE_PROCESS_VM_WRITEV
+/*
+ * Need to do this since process_vm_readv() is not yet available in libc.
+ * When libc is updated, only "static bool process_vm_readv_not_supported"
+ * line remains.
+ * The name is different to avoid potential collision with OS headers.
+ */
+static ssize_t strace_process_vm_writev(pid_t pid,
+                 const struct iovec *lvec,
+                 unsigned long liovcnt,
+                 const struct iovec *rvec,
+                 unsigned long riovcnt,
+                 unsigned long flags)
+{
+        return syscall(__NR_process_vm_writev,
+                       (long) pid, lvec, liovcnt, rvec, riovcnt, flags);
+}
+# define process_vm_writev strace_process_vm_writev
 #endif /* !HAVE_PROCESS_VM_READV */
 
 
@@ -135,6 +155,14 @@ extern char htmlStart[];
 extern char xmlSysCallScript[];
 
 extern char xmlProcessListScript[];
+
+extern char xmlSysCallModifyScript[];
+
+extern int modify;
+
+extern char* modifiedValue;
+
+extern char xmlFirstSysCallScript[];
 
 int checkInt(char buffer[]);
 

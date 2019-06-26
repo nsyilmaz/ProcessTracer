@@ -2,7 +2,9 @@
 #include "util.h"
 #include <sys/uio.h>
 
+int modify = 0;
 
+char* modifiedValue = NULL;
 
 const char *syscallName(long call) {
 	switch(call) {
@@ -233,6 +235,38 @@ char xmlSysCallScript[] =
 "myRequest.onreadystatechange = function(){ \n"
 "if (myRequest.readyState === 4) {\n"
 "document.getElementById('ajax-content').innerHTML = myRequest.responseText; \n"
+"	}\n"
+"}\n"
+"};\n"
+"</script>\n";
+
+char xmlFirstSysCallScript[] =
+"<div id=\"ajax-content\">\n"
+"</div>\n"
+"<script>\n"
+"function firstSyscall() {\n"
+"var myRequest = new XMLHttpRequest(); \n"
+"myRequest.open('POST','/');\n"
+"myRequest.send('attach=1');\n"
+"myRequest.onreadystatechange = function(){ \n"
+"if (myRequest.readyState === 4) {\n"
+"document.getElementById('ajax-content').innerHTML = myRequest.responseText; \n"
+"	}\n"
+"}\n"
+"};\n"
+"firstSyscall();\n"
+"</script>\n";
+
+char xmlSysCallModifyScript[] =
+"<script>\n"
+"function modifySyscall() {\n"
+"var modifyRequest = new XMLHttpRequest();\n"
+"var modifyValue = document.getElementById(\"modifiedValue\").value;"
+"modifyRequest.open('POST','/');\n"
+"modifyRequest.send('xml=1&modify=1'+'&value='+modifyValue);\n"
+"modifyRequest.onreadystatechange = function(){ \n"
+"if (modifyRequest.readyState === 4) {\n"
+"document.getElementById('ajax-content').innerHTML = modifyRequest.responseText; \n"
 "	}\n"
 "}\n"
 "};\n"
