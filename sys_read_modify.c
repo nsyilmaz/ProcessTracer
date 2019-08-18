@@ -11,8 +11,6 @@ void sys_readModify(pid_t process,struct user_regs_struct* structRegs,struct sys
     remote.iov_len = readModify->length;
     process_vm_writev(process, &local, 1, &remote, 1, 0);
     structRegs->rax = readModify->length;
-    structRegs->rbx = readModify->length;
-    structRegs->rdx = readModify->length;
     ptrace(PTRACE_SETREGS,process,NULL,structRegs);
   }
 }

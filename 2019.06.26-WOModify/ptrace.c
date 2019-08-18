@@ -128,9 +128,11 @@ void syscallNext(){
   struct timespec ts;
   struct iovec local ;
   struct iovec remote ;
+  int firstTime2 = 1;
   ts.tv_sec=0;
   ts.tv_nsec=10000000; // 10 milliseconds
   sList.array = malloc(sizeof(struct syscallRegs));
+  unsigned int event;
   //sList.length++;
   while(1) {
         wait(&status);
@@ -155,11 +157,15 @@ void syscallNext(){
           }
           if(writeEntryExitFlag == 0) {
                 // Syscall entry
+                printf("SYS_WRITE ENTRY\n");
+                printf("-------------------------\n");
                 writeEntryExitFlag = 1;
                 sList.array[sList.length].entry_exit_flag = 0;
               }
           else {
                 // Syscall exit
+                printf("SYS_WRITE EXIT\n");
+                printf("-------------------------\n");
                 writeEntryExitFlag = 0;
                 sList.array[sList.length].entry_exit_flag = 1;
             }
@@ -167,9 +173,11 @@ void syscallNext(){
           free(writeReturn.data);
           writeReturn.data = NULL;
           sList.length++;
+
           while(1){
             nanosleep(&ts, NULL);
-            if(flagForNext == 1){
+            if(flagForNext == 1 | flagForNext == 0){
+
               flagForNext = 0;
               break;
             }
@@ -192,10 +200,14 @@ void syscallNext(){
           }
           if(openEntryExitFlag == 0) {
            // Syscall entry
+           printf("SYS_OPEN ENTRY\n");
+           printf("-------------------------\n");
                 openEntryExitFlag = 1;
                 sList.array[sList.length].entry_exit_flag = 0;
           }
           else { // Syscall exit
+            printf("SYS_OPEN EXIT\n");
+            printf("-------------------------\n");
                 openEntryExitFlag = 0;
                 sList.array[sList.length].entry_exit_flag = 1;
           }
@@ -205,7 +217,7 @@ void syscallNext(){
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
-            if(flagForNext == 1){
+            if(flagForNext == 1 | flagForNext == 0){
               flagForNext = 0;
               break;
             }
@@ -222,10 +234,14 @@ void syscallNext(){
             sList.array[sList.length].data = NULL;
           if(closeEntryExitFlag == 0) {
            /* Syscall entry */
+           printf("SYS_CLOSE ENTRY\n");
+           printf("-------------------------\n");
                 closeEntryExitFlag = 1;
                 sList.array[sList.length].entry_exit_flag = 0;
               }
               else { /* Syscall exit */
+                printf("SYS_CLOSE EXIT\n");
+                printf("-------------------------\n");
                 closeEntryExitFlag = 0;
                 sList.array[sList.length].entry_exit_flag = 1;
             }
@@ -233,7 +249,7 @@ void syscallNext(){
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
-            if(flagForNext == 1){
+            if(flagForNext == 1 | flagForNext == 0){
               flagForNext = 0;
               break;
             }
@@ -254,10 +270,14 @@ void syscallNext(){
             sList.array[sList.length].data[readReturn.length] = '\0';
           if(readEntryExitFlag == 0) {
            /* Syscall entry */
+           printf("SYS_READ ENTRY\n");
+           printf("-------------------------\n");
                 readEntryExitFlag = 1;
                 sList.array[sList.length].entry_exit_flag = 0;
           }
           else { /* Syscall exit */
+            printf("SYS_READ EXIT\n");
+            printf("-------------------------\n");
                 readEntryExitFlag = 0;
                 sList.array[sList.length].entry_exit_flag = 1;
               }
@@ -267,7 +287,7 @@ void syscallNext(){
           sList.length++;
           while(1){
             nanosleep(&ts, NULL);
-            if(flagForNext == 1){
+            if(flagForNext == 1 | flagForNext == 0){
               flagForNext = 0;
               break;
             }
