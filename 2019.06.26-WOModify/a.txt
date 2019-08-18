@@ -1,0 +1,183 @@
+strace: Process 5950 attached
+read(0, "\r", 1)                        = 1
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r", 1)                       = 1
+write(1, "\33[93m\33[44mGetting http://systool"..., 40) = 40
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r", 1)                       = 1
+write(1, "\33[93m\33[44mLooking up systool.org"..., 35) = 35
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+nanosleep({tv_sec=0, tv_nsec=0}, 0x7ffcdf4f90e0) = 0
+wait4(-1, NULL, WNOHANG, NULL)          = -1 ECHILD (No child processes)
+pipe([3, 4])                            = 0
+rt_sigprocmask(SIG_BLOCK, [HUP INT TERM TSTP WINCH], [], 8) = 0
+clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7fd775fd1a10) = 5965
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+close(4)                                = 0
+ioctl(0, TCGETS, {B38400 opost isig -icanon -echo ...}) = 0
+select(4, [0 3], NULL, NULL, {tv_sec=1, tv_usec=0}) = 1 (in [3], left {tv_sec=0, tv_usec=725767})
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=5965, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+read(3, "@\0\0\0\0\0\0\0\20\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 24) = 24
+read(3, "\0\0\0\0\2\0\0\0\1\0\0\0\6\0\0\0\20\0\0\0\0\0\0\0\0008\0\372\331U\0\0"..., 64) = 64
+wait4(5965, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], WNOHANG, NULL) = 5965
+close(3)                                = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r", 1)                       = 1
+write(1, "\33[93m\33[44mMaking HTT", 20) = 20
+write(1, "P connection to systool.org", 27) = 27
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+nanosleep({tv_sec=0, tv_nsec=0}, 0x7ffcdf4f90e0) = 0
+socket(AF_INET, SOCK_STREAM, IPPROTO_TCP) = 3
+ioctl(3, FIONBIO, [1])                  = 0
+connect(3, {sa_family=AF_INET, sin_port=htons(80), sin_addr=inet_addr("95.211.218.9")}, 16) = -1 EINPROGRESS (Operation now in progress)
+select(4, NULL, [3], NULL, {tv_sec=0, tv_usec=100000}) = 1 (out [3], left {tv_sec=0, tv_usec=43616})
+connect(3, {sa_family=AF_INET, sin_port=htons(80), sin_addr=inet_addr("95.211.218.9")}, 16) = 0
+ioctl(3, FIONBIO, [0])                  = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r", 1)                       = 1
+write(1, "\33[93m\33[44mSending HTTP request.\33"..., 34) = 34
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+nanosleep({tv_sec=0, tv_nsec=0}, 0x7ffcdf4f99f0) = 0
+write(3, "GET / HTTP/1.0\r\nHost: systool.or"..., 234) = 234
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r", 1)                       = 1
+write(1, "\33[93m\33[44mHTTP request sent; w", 30) = 30
+write(1, "aiting for response.", 20)    = 20
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+nanosleep({tv_sec=0, tv_nsec=0}, 0x7ffcdf4f99f0) = 0
+select(1, [0], NULL, NULL, {tv_sec=0, tv_usec=0}) = 0 (Timeout)
+select(4, [3], NULL, NULL, {tv_sec=0, tv_usec=100000}) = 1 (in [3], left {tv_sec=0, tv_usec=29442})
+read(3, "HTTP/1.1 200 OK\r\nDate: Thu, 27 J"..., 1535) = 1378
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\33[5G", 4)                   = 4
+write(1, "\33[93m\33[44m/1.1 200 OK\33[K", 24) = 24
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+nanosleep({tv_sec=0, tv_nsec=0}, 0x7ffcdf4f99f0) = 0
+select(1, [0], NULL, NULL, {tv_sec=0, tv_usec=0}) = 0 (Timeout)
+lstat("/tmp/", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=20480, ...}) = 0
+getuid()                                = 1000
+umask(077)                              = 022
+getpid()                                = 5950
+mkdir("/tmp/lynxXXXXPv4IxC", 0700)      = 0
+umask(022)                              = 077
+getpid()                                = 5950
+getrandom("\x1d\x4f\x2f\x10\x5e\x29\x22\xdf\x7c\x41\x00\x77\xba\xd8\x95\x23\xc2\x32\x64\xbb\x8e\xdd\xc1\xc8\x58\x81\x97\xe3\xc2\xa2\xec\x44"..., 40, 0) = 40
+mmap(NULL, 16, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd775fe0000
+mmap(NULL, 1088, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd775fdf000
+getpid()                                = 5950
+openat(AT_FDCWD, "/tmp/lynxXXXXPv4IxC/L5950-9947TMP.html.gz", O_WRONLY|O_CREAT|O_EXCL, 0600) = 4
+fcntl(4, F_GETFL)                       = 0x8001 (flags O_WRONLY|O_LARGEFILE)
+fstat(4, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+select(4, [3], NULL, NULL, {tv_sec=0, tv_usec=100000}) = 1 (in [3], left {tv_sec=0, tv_usec=99996})
+read(3, "", 4096)                       = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r", 1)                       = 1
+write(1, "\33[93m\33[44mData transfer complete", 32) = 32
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+nanosleep({tv_sec=0, tv_nsec=0}, 0x7ffcdf4f99a0) = 0
+close(3)                                = 0
+write(4, "\37\213\10\0\0\0\0\0\0\3\345Wmo\233H\20\376l~\305\34_\260u\6L\336\23\33\237\362"..., 1178) = 1178
+close(4)                                = 0
+stat("/tmp/lynxXXXXPv4IxC/L5950-9947TMP.html.gz", {st_mode=S_IFREG|0600, st_size=1178, ...}) = 0
+openat(AT_FDCWD, "/tmp/lynxXXXXPv4IxC/L5950-9947TMP.html.gz", O_RDONLY) = 3
+stat("/tmp/lynxXXXXPv4IxC/L5950-9947TMP.html.gz", {st_mode=S_IFREG|0600, st_size=1178, ...}) = 0
+getgroups(65536, [4, 24, 27, 30, 46, 113, 128, 134, 136, 137, 1000]) = 11
+geteuid()                               = 1000
+lseek(3, 0, SEEK_CUR)                   = 0
+fstat(3, {st_mode=S_IFREG|0600, st_size=1178, ...}) = 0
+read(3, "\37\213\10\0\0\0\0\0\0\3\345Wmo\233H\20\376l~\305\34_\260u\6L\336\23\33\237\362"..., 4096) = 1178
+lseek(3, 0, SEEK_SET)                   = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/tmp/lynxXXXXPv4IxC/L5950-9947TMP.html.gz", O_RDONLY) = 3
+lseek(3, 0, SEEK_CUR)                   = 0
+read(3, "\37\213\10\0\0\0\0\0\0\3\345Wmo\233H\20\376l~\305\34_\260u\6L\336\23\33\237\362"..., 8192) = 1178
+read(3, "", 7014)                       = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\33[H", 3)                    = 3
+write(1, "\33(B\33[0;7m\33[37m\33[40m\342\206\220\342\206\220\342\206\220\33[1;"..., 35) = 35
+write(1, "\33(B\33[0m\33[37m\33[40m\33[35X\33[1;56H", 29) = 29
+write(1, "\33[35m\33[40m--= systool =--\33[79G", 30) = 30
+write(1, "2\n\33[4G", 6)                = 6
+write(1, "\33[37m\33[40mYour IP Adress Is: 176"..., 48) = 48
+write(1, "inetnum:\33[3;17H", 15)       = 15
+write(1, "176.88.0.0 - 176.88.255.255\r\n", 29) = 29
+write(1, "netname:  \33[17G", 15)       = 15
+write(1, "TR-SUPERONLINE-20110704\r\n", 25) = 25
+write(1, "country:\33[5;17H", 15)       = 15
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "TR\r\n", 4)                   = 4
+write(1, "mnt-routes:     SOL-NET\33[K\r\n", 28) = 28
+write(1, "mnt-routes:     MNT-TELLCOM\33[K\r\n", 32) = 32
+write(1, "route:          176.88.144.0/21\33"..., 36) = 36
+write(1, "\33[K\33[10;36H", 11)         = 11
+write(1, "\33[1K ", 5)                  = 5
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "Whois\r\n\n   ", 11)          = 11
+write(1, "Whois\33[33m\33[40m \33[37m\33[40m______"..., 77) = 77
+write(1, "\33[K\33[14;37H", 11)         = 11
+write(1, "Ping\r\n", 6)                 = 6
+write(1, "\33[K\n   ", 7)               = 7
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "Ping\33[33m\33[40m \33[37m\33[40m_______"..., 73) = 73
+write(1, "\33[K\33[18;31H", 11)         = 11
+write(1, "\33[1K ", 5)                  = 5
+write(1, "nslookup (any)\33[K\r\n\n   ", 23) = 23
+write(1, "Nslookup\33[33m\33[40m \33[37m\33[40m___"..., 80) = 80
+write(1, "\33[K\33[20;33H", 11)         = 11
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+close(3)                                = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+openat(AT_FDCWD, "/usr/share/locale-langpack/en_US/LC_MESSAGES/lynx.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/usr/share/locale-langpack/en/LC_MESSAGES/lynx.mo", O_RDONLY) = -1 ENOENT (No such file or directory)
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\r\n\n", 3)                   = 3
+write(1, "\33[93m\33[44m(Textfield \"%s\") Enter"..., 80) = 80
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+rt_sigaction(SIGTSTP, {sa_handler=SIG_IGN, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, 8) = 0
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+poll([{fd=0, events=POLLIN}], 1, 0)     = 0 (Timeout)
+write(1, "\33[12;10H", 8)               = 8
+write(1, "\33[93m\33[40m____________________\33["..., 38) = 38
+write(1, "\33[37m\33[40m\33[1K ", 15)   = 15
+write(1, "Enter text into the field by typ"..., 57) = 57
+write(1, "   Ctrl-U to delete all text in "..., 83) = 83
+write(1, "\33[39;49m\33(B\33[m", 14)    = 14
+rt_sigaction(SIGTSTP, {sa_handler=0x7fd77535d590, sa_mask=[], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fd7747eef20}, NULL, 8) = 0
+read(0, strace: Process 5950 detached
+ <detached ...>
+
+
+
+
+https://sourceforge.net/p/strace/mailman/search/?q=syscall&mail_list=strace-devel\%22\],%22TO%22=[%22hede%22]
