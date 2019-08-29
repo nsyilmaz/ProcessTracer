@@ -117,6 +117,11 @@ struct syscallList{
   struct syscallRegs* array;
 };
 
+extern int port;
+
+extern char* ipaddr;
+
+void ipModifyValueTaker(char* );
 
 extern struct processList pList;
 
@@ -142,17 +147,38 @@ int ishex(int x);
 
 int decode(const char *s, char *dec);
 
+void sendModifyHTTPHandler();
+
 int stringSplit(char* c);
 
 extern char tableStart[];
 
 extern char tableEnd[];
 
+void resetFilterFlags();
+
 extern char htmlEnd[];
 
 extern char htmlStart[];
 
 extern char xmlSysCallScript[];
+
+extern int readFilterFlag;
+
+extern int writeFilterFlag;
+
+extern int openFilterFlag;
+
+extern int acceptFilterFlag;
+
+extern int connectFilterFlag;
+
+extern int closeFilterFlag;
+
+extern int sendFilterFlag;
+
+extern int recvFilterFlag;
+
 
 extern char xmlProcessListScript[];
 

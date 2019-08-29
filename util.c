@@ -4,26 +4,19 @@
 
 int modify = 0;
 
+int port;
+
+char* ipaddr= NULL;
+
 char* modifiedValue = NULL;
-
-const char *syscallName(long call) {
-	switch(call) {
-
-		case SYS_open :
-			return "open";
-
-		case SYS_read :
-			return "read";
-
-		case SYS_write :
-			return "write";
-
-		default:
-			return "unknown";
-	}
-}
-
-
+int readFilterFlag = 0;
+int writeFilterFlag = 0;
+int openFilterFlag = 0;
+int acceptFilterFlag = 0;
+int connectFilterFlag = 0;
+int closeFilterFlag = 0;
+int sendFilterFlag = 0;
+int recvFilterFlag = 0;
 
 void putdata(pid_t child, long addr, char *str, int len){
 
@@ -52,6 +45,19 @@ void putdata(pid_t child, long addr, char *str, int len){
 	}
 }
 
+void ipModifyValueTaker(char* buffer){
+	char* startOfIPValue = strstr(buffer,"ip=")+3;
+	int lengthOfIp = 0;
+	while(*startOfIPValue != '&'){
+		lengthOfIp++;
+		startOfIPValue++;
+	}
+	ipaddr = malloc(sizeof(char)*lengthOfIp);
+	startOfIPValue = strstr(buffer,"ip=")+3;
+	for(int i=0;i<lengthOfIp;i++){
+		ipaddr[i] = startOfIPValue[i];
+	}
+}
 
 void getdata(pid_t child, long addr,char *str, int len){
 
@@ -154,6 +160,28 @@ int umovestr_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, void
 	return 0;
 }
 
+void sendModifyHTTPHandler(){
+	int numberOfNewlines = 0;
+	int newPointerSize = 0;
+	char* newPointer;
+	for(int i=0;i<strlen(modifiedValue);i++){
+		if(modifiedValue[i] == '\n'){
+			numberOfNewlines++;
+		}
+	}
+	newPointerSize = strlen(modifiedValue)+numberOfNewlines;
+	newPointer = malloc(sizeof(char)*newPointerSize);
+	for(int i=0,j=0;j<newPointerSize;){
+		if(modifiedValue[i] == '\n'){
+			newPointer[j++] = '\r';
+		}
+			newPointer[j] = modifiedValue[i];
+			i++;
+			j++;
+	}
+	free(modifiedValue);
+	modifiedValue = newPointer;
+}
 
 
 
@@ -261,9 +289,17 @@ char xmlSysCallModifyScript[] =
 "<script>\n"
 "function modifySyscall() {\n"
 "var modifyRequest = new XMLHttpRequest();\n"
-"var modifyValue = document.getElementById(\"modifiedValue\").value;"
+"var modifyValue = document.getElementById(\"modifiedValue\");"
+"var modifyIP = document.getElementById(\"ip\");"
+"var modifyPort = document.getElementById(\"port\");"
+"if(modifyIP && modifyPort){\n"
 "modifyRequest.open('POST','/');\n"
-"modifyRequest.send('xml=1&modify=1'+'&value='+modifyValue);\n"
+"modifyRequest.send('xml=1&modify=1'+'&ip='+modifyIP.value+'&port='+modifyPort.value);\n"
+"}\n"
+"else if(modifyValue){"
+"modifyRequest.open('POST','/');\n"
+"modifyRequest.send('xml=1&modify=1'+'&value='+modifyValue.value);\n"
+"}\n"
 "modifyRequest.onreadystatechange = function(){ \n"
 "if (modifyRequest.readyState === 4) {\n"
 "document.getElementById('ajax-content').innerHTML = modifyRequest.responseText; \n"
@@ -296,10 +332,27 @@ char mainPanelHTML[]="<form action=\"/\" method=\"post\">\n"
 "<button id=\"path\" type=\"submit\">Exit</button>\n"
 "</form>\n"
 "<form action=\"/\" method=\"post\">\n"
-"<p style=\"margin-left:200px;\">Path</p> \n <br> <input type=\"text\" name=\"path\"placeholder=\"Full Path to binary\" id=\"execution\" style =\"margin-left:200px\"></br>\n"
+"<p style=\"margin-left:200px;\">Path</p> \n <br>"
+"<input type=\"checkbox\" name=\"filter\" value=\"Read\" style=\"margin-left:200px;\"> Read System Call\n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Write\"> Write System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Open\"> Open System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Accept\"> Accept System Call     <br>\n"
+"<input style=\"margin-left:200px;\" type=\"checkbox\" name=\"filter\" value=\"Connect\"> Connect System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Close\"> Close System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Send\"> Send System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Recv\"> Recv System Call     <br>\n"
+"<input type=\"text\" name=\"path\"placeholder=\"Full Path to binary\" id=\"execution\" style =\"margin-left:200px\"></br>\n"
 "<button id=\"path\" type=\"submit\">Submit</button>\n"
 "</form>"
 "<form action=\"/\" method=\"post\">\n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Read\" style=\"margin-left:200px;\"> Read System Call\n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Write\"> Write System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Open\"> Open System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Accept\"> Accept System Call     <br>\n"
+"<input style=\"margin-left:200px;\" type=\"checkbox\" name=\"filter\" value=\"Connect\"> Connect System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Close\"> Close System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Send\"> Send System Call     \n"
+"<input type=\"checkbox\" name=\"filter\" value=\"Recv\"> Recv System Call     <br>\n"
 "<div id='process-table'>\n";
 
 char tableStart[] = "<table  width=\"50%\" id=\"tab\" style=\"margin-left:200px;\">\n"
@@ -318,9 +371,6 @@ char tableStart[] = "<table  width=\"50%\" id=\"tab\" style=\"margin-left:200px;
 char tableEnd[] = "<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
               "</tbody>\n"
               "</table>\n"
-							"<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
-							              "</tbody>\n"
-							              "</table>\n"
 								      "</div>\n"
 							              "</form>\n";
 
@@ -406,6 +456,17 @@ int checkInt(char buffer[]){
     i++;
   }
   return 1;
+}
+
+void resetFilterFlags(){
+  readFilterFlag = 0;
+  writeFilterFlag = 0;
+  openFilterFlag = 0;
+  acceptFilterFlag = 0;
+  connectFilterFlag = 0;
+  closeFilterFlag = 0;
+  sendFilterFlag = 0;
+  recvFilterFlag = 0;
 }
 
 void cats(char **str, const char *str2) {
