@@ -111,10 +111,18 @@ void sendProcessInformationPath(int* fd_client,char* path){
 void sendModifyTable(int* fd_client,char* buffer,int i){
     sprintf(buffer, "<table border=1><tr>");
     write(*fd_client,buffer,strlen(buffer));
-    sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
-    write(*fd_client,buffer,strlen(buffer));
-    sprintf(buffer,"<td><p><textarea rows=\"4\" cols=\"50\"  id = 'modifiedValue'>%s</textarea><br><button onclick = 'modifySyscall()'> Modify & Continue </button></p>",sList.array[i].data);
-    write(*fd_client,buffer,strlen(buffer));
+    if(sList.array[i].regs->orig_eax == SYS_close){
+        sprintf(buffer,"<td><p> Data: %lld </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].regs->rdi);
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p><textarea rows=\"4\" cols=\"50\"  id = 'modifiedValue'>%lld</textarea><br><button onclick = 'modifySyscall()'> Modify & Continue </button></p>",sList.array[i].regs->rdi);
+        write(*fd_client,buffer,strlen(buffer));
+    }
+    else{
+        sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p><textarea rows=\"4\" cols=\"50\"  id = 'modifiedValue'>%s</textarea><br><button onclick = 'modifySyscall()'> Modify & Continue </button></p>",sList.array[i].data);
+        write(*fd_client,buffer,strlen(buffer));
+    }
     sprintf(buffer, "</td>");
     write(*fd_client,buffer,strlen(buffer));
     sprintf(buffer, "</tr></table>");
@@ -137,6 +145,260 @@ void startPtraceFromPath(int* fd_client,char* request){
             isStartedPtrace = 1;
         }
     }
+}
+
+void sys_connectDataWithModifySender(int *fd_client,int i){
+    char buffer[5012];
+    struct sockaddr_in* connectStruct = (struct sockaddr_in*) sList.array[i].data;
+    if(sList.array[i].entry_exit_flag == 0){
+        sprintf(buffer,"<p> Ip address: <input id=\"ip\" value= \"%s\"></p>",inet_ntoa(connectStruct->sin_addr));
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<p> Port: <input id=\"port\" value = \"%d\">&emsp;&emsp;&emsp; <button onclick = 'modifySyscall()'> Modify & Continue </button> </p>",htons(connectStruct->sin_port));
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<button onclick = 'modifySyscall()'> Modify & Continue </button>");
+    }
+    else{
+        sprintf(buffer,"<p> Ip adress: %s </p>\n",inet_ntoa(connectStruct->sin_addr));
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<p> Port: %d </p>\n",htons(connectStruct->sin_port));
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<p> In SYS_CONNECT, on the exit of system call, you can't manipulate the data.</p>\n");
+    }
+}
+
+void sys_openatDataWithModifySender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 0){
+        sendModifyTable(fd_client,buffer,i);
+    }
+    else if(sList.array[i].entry_exit_flag == 1){
+        sprintf(buffer, "<table border=1><tr>");
+        write(*fd_client,buffer,strlen(buffer));
+        if(sList.array[i].data){
+            sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
+        }
+        else{
+            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
+        }
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p>In SYS_OPEN, on the exit of system call, you can't manipulate the data.</p>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</td>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</tr></table>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_closeDataWithModifySender(int *fd_client, int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 0){
+        sendModifyTable(fd_client,buffer,i);
+    }
+    else if(sList.array[i].entry_exit_flag == 1){
+        sprintf(buffer, "<table border=1><tr>");
+        write(*fd_client,buffer,strlen(buffer));
+        if(sList.array[i].data){
+            sprintf(buffer,"<td><p> Data: %lld </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].regs->rdi);
+        }
+        else{
+            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
+        }
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p>In SYS_CLOSE, on the exit of system call, you can't manipulate the data.</p>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</td>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</tr></table>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_writeDataWithModifySender(int *fd_client, int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 0){
+        sendModifyTable(fd_client,buffer,i);
+    }
+    else if(sList.array[i].entry_exit_flag == 1){
+        sprintf(buffer, "<table border=1><tr>");
+        write(*fd_client,buffer,strlen(buffer));
+        if(sList.array[i].data){
+            sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
+        }
+        else{
+            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
+        }
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p>In SYS_WRITE, on the exit of system call, you can't manipulate the data.</p>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</td>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</tr></table>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_callEntryExitSender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 1){
+        sprintf(buffer,"<p> System call exit</p>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+    else{
+        sprintf(buffer,"<p> System call entry</p>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_sendtoDataWithModifySender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 0){
+        sendModifyTable(fd_client,buffer,i);
+    }
+    else if(sList.array[i].entry_exit_flag == 1){
+        sprintf(buffer, "<table border=1><tr>");
+        write(*fd_client,buffer,strlen(buffer));
+        if(sList.array[i].data){
+            sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
+        }
+        else{
+            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
+        }
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p>In SYS_WRITE, on the exit of system call, you can't manipulate the data.</p>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</td>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</tr></table>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_recvfromDataWithModifySender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 1){
+        sendModifyTable(fd_client,buffer,i);
+    }
+    else if(sList.array[i].entry_exit_flag == 0){
+        sprintf(buffer, "<table border=1><tr>");
+        write(*fd_client,buffer,strlen(buffer));
+        if(sList.array[i].data){
+            sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
+        }
+        else{
+            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
+        }
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p>In SYS_RECVFROM, on the entry of system call, you can't manipulate the data.</p>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</td>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</tr></table>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_readDataWithModifySender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].entry_exit_flag == 1){
+        sendModifyTable(fd_client,buffer,i);
+    }
+    else if(sList.array[i].entry_exit_flag == 0){
+        sprintf(buffer, "<table border=1><tr>");
+        write(*fd_client,buffer,strlen(buffer));
+        if(sList.array[i].data){
+            sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
+        }
+        else{
+            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
+        }
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer,"<td><p>In SYS_READ, on the entry of system call, you can't manipulate the data.</p>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</td>");
+        write(*fd_client,buffer,strlen(buffer));
+        sprintf(buffer, "</tr></table>");
+        write(*fd_client,buffer,strlen(buffer));
+    }
+}
+
+void sys_connectDataSender(int *fd_client,int i){
+    char buffer[5012];
+    struct sockaddr_in* connectStruct = (struct sockaddr_in*) sList.array[i].data;
+    sprintf(buffer,"<p> Ip adress: %s </p>",inet_ntoa(connectStruct->sin_addr));
+    write(*fd_client,buffer,strlen(buffer));
+    sprintf(buffer,"<p> Port: %d </p>",htons(connectStruct->sin_port));
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_openatDataSender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].data){
+        sprintf(buffer,"<p> Data: %s </p>",sList.array[i].data);
+    }
+    else{
+        sprintf(buffer,"<p> Data: </p>");
+    }
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_closeDataSender(int *fd_client,int i){
+    char buffer[5012];
+    sprintf(buffer,"<p>File Descriptor: %lld",sList.array[i].regs->rdi);
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_writeDataSender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].data){
+        sprintf(buffer,"<p> Data: %s </p>",sList.array[i].data);
+    }
+    else{
+        sprintf(buffer,"<p> Data: </p>");
+    }
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_sendtoDataSender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].data){
+        sprintf(buffer,"<p> Data: %s </p>",sList.array[i].data);
+    }
+    else{
+        sprintf(buffer,"<p> Data: </p>");
+    }
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_recvfromDataSender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].data){
+        sprintf(buffer,"<p> Data: %s </p>",sList.array[i].data);
+    }
+    else{
+        sprintf(buffer,"<p> Data: </p>");
+    }
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_readDataSender(int *fd_client,int i){
+    char buffer[5012];
+    if(sList.array[i].data){
+        sprintf(buffer,"<p> Data: %s </p>",sList.array[i].data);
+    }
+    else{
+        sprintf(buffer,"<p> Data: </p>");
+    }
+    write(*fd_client,buffer,strlen(buffer));
+}
+
+void sys_acceptDataSender(int *fd_client,int i){
+    char buffer[5012];
+    struct sockaddr_in* acceptStruct = (struct sockaddr_in*) sList.array[i].data;
+    sprintf(buffer,"<p> Ip adress: %s </p>",inet_ntoa(acceptStruct->sin_addr));
+    write(*fd_client,buffer,strlen(buffer));
+    sprintf(buffer,"<p> Port: %d </p>",htons(acceptStruct->sin_port));
+    write(*fd_client,buffer,strlen(buffer));
 }
 
 void sendRegistersFromIndex(int *fd_client,int i){
@@ -188,222 +450,64 @@ void sendSyscallNameFromIndex(int *fd_client,int i){
     else if(sList.array[i].regs->orig_eax == SYS_close){
         sprintf(buffer,"<p>SYS_CLOSE</p>");
         write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer,"<p>File Descriptor: %lld",sList.array[i].regs->rdi);
-        write(*fd_client,buffer,strlen(buffer));
     }
 }
 
 void sendSyscallDataFromIndex(int* fd_client,int i){
-    char buffer[5012];
-    if(sList.array[i].regs->orig_eax == SYS_connect && i==sList.length-1){
-        struct sockaddr_in* connectStruct = (struct sockaddr_in*) sList.array[i].data;
-        if(sList.array[i].entry_exit_flag == 0){
-            sprintf(buffer,"<p> Ip address: <input id=\"ip\" value= \"%s\"></p>",inet_ntoa(connectStruct->sin_addr));
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> Port: <input id=\"port\" value = \"%d\">&emsp;&emsp;&emsp; <button onclick = 'modifySyscall()'> Modify & Continue </button> </p>",htons(connectStruct->sin_port));
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<button onclick = 'modifySyscall()'> Modify & Continue </button>");
-        }
-        else{
-            sprintf(buffer,"<p> Ip adress: %s </p>\n",inet_ntoa(connectStruct->sin_addr));
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> Port: %d </p>\n",htons(connectStruct->sin_port));
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> In SYS_CONNECT, on the exit of system call, you can't manipulate the data.</p>\n");
-        }
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_connect){
-        struct sockaddr_in* connectStruct = (struct sockaddr_in*) sList.array[i].data;
-        sprintf(buffer,"<p> Ip adress: %s </p>",inet_ntoa(connectStruct->sin_addr));
-        write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer,"<p> Port: %d </p>",htons(connectStruct->sin_port));
-        write(*fd_client,buffer,strlen(buffer));
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_openat && i==sList.length-1){
-        if(sList.array[i].entry_exit_flag == 0){
-            sendModifyTable(fd_client,buffer,i);
-            sprintf(buffer,"<p> System call entry</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-        else if(sList.array[i].entry_exit_flag == 1){
-            sprintf(buffer, "<table border=1><tr>");
-            write(*fd_client,buffer,strlen(buffer));
-            if(sList.array[i].data){
-                sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
-            }
-            else{
-                sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
-            }
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p>In SYS_OPEN, on the exit of system call, you can't manipulate the data.</p>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</td>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</tr></table>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> System call exit</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_close && i==sList.length-1){
-        if(sList.array[i].entry_exit_flag == 0){
-            sprintf(buffer, "<table border=1><tr>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p> Data: %lld </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].regs->rdi);
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p><textarea rows=\"4\" cols=\"50\"  id = 'modifiedValue'>%lld</textarea><br><button onclick = 'modifySyscall()'> Modify & Continue </button></p>",sList.array[i].regs->rdi);
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</td>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</tr></table>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> System call entry</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-        else if(sList.array[i].entry_exit_flag == 1){
-            sprintf(buffer, "<table border=1><tr>");
-            write(*fd_client,buffer,strlen(buffer));
-            if(sList.array[i].data){
-                sprintf(buffer,"<td><p> Data: %lld </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].regs->rdi);
-            }
-            else{
-                sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
-            }
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p>In SYS_CLOSE, on the exit of system call, you can't manipulate the data.</p>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</td>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</tr></table>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> System call exit</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_write && i==sList.length-1){
-        if(sList.array[i].entry_exit_flag == 0){
-            sendModifyTable(fd_client,buffer,i);
-            sprintf(buffer,"<p> System call entry</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-        else if(sList.array[i].entry_exit_flag == 1){
-            sprintf(buffer, "<table border=1><tr>");
-            write(*fd_client,buffer,strlen(buffer));
-            if(sList.array[i].data){
-                sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
-            }
-            else{
-                sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
-            }
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p>In SYS_WRITE, on the exit of system call, you can't manipulate the data.</p>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</td>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</tr></table>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> System call exit</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_sendto && i==sList.length-1)  if(sList.array[i].entry_exit_flag == 0){
-        sendModifyTable(fd_client,buffer,i);
-        sprintf(buffer,"<p> System call entry</p>");
-        write(*fd_client,buffer,strlen(buffer));
-    }
-    else if(sList.array[i].entry_exit_flag == 1){
-        sprintf(buffer, "<table border=1><tr>");
-        write(*fd_client,buffer,strlen(buffer));
-        if(sList.array[i].data){
-            sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
-        }
-        else{
-            sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
-        }
-        write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer,"<td><p>In SYS_SENDTO, on the exit of system call, you can't manipulate the data.</p>");
-        write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer, "</td>");
-        write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer, "</tr></table>");
-        write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer,"<p> System call exit</p>");
-        write(*fd_client,buffer,strlen(buffer));
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_accept){
-        struct sockaddr_in* acceptStruct = (struct sockaddr_in*) sList.array[i].data;
-        sprintf(buffer,"<p> Ip adress: %s </p>",inet_ntoa(acceptStruct->sin_addr));
-        write(*fd_client,buffer,strlen(buffer));
-        sprintf(buffer,"<p> Port: %d </p>",htons(acceptStruct->sin_port));
-        write(*fd_client,buffer,strlen(buffer));
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_recvfrom && i==sList.length-1){
-        if(sList.array[i].entry_exit_flag == 1){
-            sendModifyTable(fd_client,buffer,i);
-            sprintf(buffer,"<p> System call exit</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-        else if(sList.array[i].entry_exit_flag == 0){
-            sprintf(buffer, "<table border=1><tr>");
-            write(*fd_client,buffer,strlen(buffer));
-            if(sList.array[i].data){
-                sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
-            }
-            else{
-                sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
-            }
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p>In SYS_RECVFROM, on the entry of system call, you can't manipulate the data.</p>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</td>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</tr></table>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> System call entry</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-    }
-    else if(sList.array[i].regs->orig_eax == SYS_read && i==sList.length-1){
-        if(sList.array[i].entry_exit_flag == 1){
-            sendModifyTable(fd_client,buffer,i);
-            sprintf(buffer,"<p> System call exit</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-        else if(sList.array[i].entry_exit_flag == 0){
-            sprintf(buffer, "<table border=1><tr>");
-            write(*fd_client,buffer,strlen(buffer));
-            if(sList.array[i].data){
-                sprintf(buffer,"<td><p> Data: %s </p><button onclick = 'nextSyscall()'> Next </button></td>",sList.array[i].data);
-            }
-            else{
-                sprintf(buffer,"<td><p> Data: </p><button onclick = 'nextSyscall()'> Next </button></td>");
-            }
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<td><p>In SYS_READ, on the entry of system call, you can't manipulate the data.</p>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</td>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer, "</tr></table>");
-            write(*fd_client,buffer,strlen(buffer));
-            sprintf(buffer,"<p> System call entry</p>");
-            write(*fd_client,buffer,strlen(buffer));
+    if(i==sList.length-1){
+        switch(sList.array[i].regs->orig_eax){
+            case SYS_connect:
+                sys_connectDataWithModifySender(fd_client,i);
+                break;
+            case SYS_openat:
+                sys_openatDataWithModifySender(fd_client,i);
+                break;
+            case SYS_close:
+                sys_closeDataWithModifySender(fd_client,i);
+                break;
+            case SYS_write:
+                sys_writeDataWithModifySender(fd_client,i);
+                break;
+            case SYS_sendto:
+                sys_sendtoDataWithModifySender(fd_client,i);
+                break;
+            case SYS_recvfrom:
+                sys_recvfromDataWithModifySender(fd_client,i);
+                break;
+            case SYS_read:
+                sys_readDataWithModifySender(fd_client,i);
+                break;
+            case SYS_accept:
+                sys_acceptDataSender(fd_client,i);
+                break;
         }
     }
     else{
-        if(sList.array[i].data){
-            sprintf(buffer,"<p> Data: %s </p>",sList.array[i].data);
-        }
-        else{
-            sprintf(buffer,"<p> Data: </p>");
-        }
-        write(*fd_client,buffer,strlen(buffer));
-        if(sList.array[i].entry_exit_flag == 1){
-            sprintf(buffer,"<p> System call exit</p>");
-            write(*fd_client,buffer,strlen(buffer));
-        }
-        else if(sList.array[i].entry_exit_flag == 0){
-            sprintf(buffer,"<p> System call entry </p>");
-            write(*fd_client,buffer,strlen(buffer));
+        switch(sList.array[i].regs->orig_eax){
+            case SYS_connect:
+                sys_connectDataSender(fd_client,i);
+                break;
+            case SYS_openat:
+                sys_openatDataSender(fd_client,i);
+                break;
+            case SYS_close:
+                sys_closeDataSender(fd_client,i);
+                break;
+            case SYS_write:
+                sys_writeDataSender(fd_client,i);
+                break;
+            case SYS_sendto:
+                sys_sendtoDataSender(fd_client,i);
+                break;
+            case SYS_recvfrom:
+                sys_recvfromDataSender(fd_client,i);
+                break;
+            case SYS_read:
+                sys_readDataSender(fd_client,i);
+                break;
+            case SYS_accept:
+                sys_acceptDataSender(fd_client,i);
+                break;
         }
     }
 }
@@ -415,6 +519,7 @@ void sendAllSysCalls(int* fd_client){
     for(int i=sList.length-1;i>=0;i--){
         sendSyscallNameFromIndex(fd_client,i);
         sendRegistersFromIndex(fd_client,i);
+        sys_callEntryExitSender(fd_client,i);
         sendSyscallDataFromIndex(fd_client,i);
     }
     write(*fd_client,htmlEnd,strlen(htmlEnd));
@@ -460,7 +565,8 @@ void* requestHandler(void *ptr){
     memset(requestBuffer,0,2048);
     read(*fd_client, requestBuffer, 2047);
     if(!strstr(requestBuffer,"favicon")){
-        printf("%s\n",requestBuffer);
+        //printf("%s\n",requestBuffer);
+        ;
     }
     if(!strncmp(requestBuffer, "GET /favicon.ico",16)){
         //not yet completed...
