@@ -4,7 +4,7 @@
 #include <sys/reg.h>
 
 struct sys_readReturn{
-  char *data;
-  int length;
+    char *data;
+    int length;
 };
 void sys_read(pid_t,struct user_regs_struct*,struct sys_readReturn*);

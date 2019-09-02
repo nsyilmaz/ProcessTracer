@@ -5,7 +5,7 @@
 
 
 struct sys_closeReturn{
-  int fileDescriptor;
+    int fileDescriptor;
 };
 
 void sys_close(pid_t process,struct user_regs_struct* structRegs,struct sys_closeReturn* closeReturn);

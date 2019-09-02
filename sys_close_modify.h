@@ -3,9 +3,8 @@
 #include <sys/syscall.h>
 #include <sys/reg.h>
 
-
 struct sys_closeModify{
-  int fileDescriptor;
+    int fileDescriptor;
 };
 
 void sys_closeModify(pid_t,struct user_regs_struct*,struct sys_closeModify*);

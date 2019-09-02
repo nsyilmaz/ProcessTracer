@@ -4,7 +4,7 @@
 #include <sys/reg.h>
 
 struct sys_writeModify{
-  char *data;
-  int length;
+    char *data;
+    int length;
 };
 void sys_writeModify(pid_t,struct user_regs_struct*,struct sys_writeModify*);

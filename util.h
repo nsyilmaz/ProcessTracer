@@ -45,14 +45,13 @@
  * The name is different to avoid potential collision with OS headers.
  */
 static ssize_t strace_process_vm_readv(pid_t pid,
-                 const struct iovec *lvec,
-                 unsigned long liovcnt,
-                 const struct iovec *rvec,
-                 unsigned long riovcnt,
-                 unsigned long flags)
+    const struct iovec *lvec,
+    unsigned long liovcnt,
+    const struct iovec *rvec,
+    unsigned long riovcnt,
+    unsigned long flags)
 {
-        return syscall(__NR_process_vm_readv,
-                       (long) pid, lvec, liovcnt, rvec, riovcnt, flags);
+    return syscall(__NR_process_vm_readv,(long) pid, lvec, liovcnt, rvec, riovcnt, flags);
 }
 # define process_vm_readv strace_process_vm_readv
 #endif /* !HAVE_PROCESS_VM_READV */
@@ -65,14 +64,13 @@ static ssize_t strace_process_vm_readv(pid_t pid,
  * The name is different to avoid potential collision with OS headers.
  */
 static ssize_t strace_process_vm_writev(pid_t pid,
-                 const struct iovec *lvec,
-                 unsigned long liovcnt,
-                 const struct iovec *rvec,
-                 unsigned long riovcnt,
-                 unsigned long flags)
+    const struct iovec *lvec,
+    unsigned long liovcnt,
+    const struct iovec *rvec,
+    unsigned long riovcnt,
+    unsigned long flags)
 {
-        return syscall(__NR_process_vm_writev,
-                       (long) pid, lvec, liovcnt, rvec, riovcnt, flags);
+    return syscall(__NR_process_vm_writev,(long) pid, lvec, liovcnt, rvec, riovcnt, flags);
 }
 # define process_vm_writev strace_process_vm_writev
 #endif /* !HAVE_PROCESS_VM_READV */
@@ -84,37 +82,40 @@ int umoven_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, char *
 
 int execvArraySize(char* cursor);
 
-
 const char *syscallName(long call);
 
 extern char htmlStartWithCSS[];
+
 extern char end[];
+
 extern char responseHeader[];
+
 extern char responseEnd[];
+
 extern char mainPanelHTML[];
 
 struct process{
-  char *pid;
-  char *ppid;
-  char *user;
-  char *name;
-  char *cmdline;
+    char *pid;
+    char *ppid;
+    char *user;
+    char *name;
+    char *cmdline;
 };
 
 struct processList{
-  int length;
-  struct process* array;
+    int length;
+    struct process* array;
 };
 
 struct syscallRegs{
-  char* data;
-  struct user_regs_struct* regs;
-  int entry_exit_flag;
+    char* data;
+    struct user_regs_struct* regs;
+    int entry_exit_flag;
 };
 
 struct syscallList{
-  int length;
-  struct syscallRegs* array;
+    int length;
+    struct syscallRegs* array;
 };
 
 extern int port;
@@ -179,7 +180,6 @@ extern int sendFilterFlag;
 
 extern int recvFilterFlag;
 
-
 extern char xmlProcessListScript[];
 
 extern char xmlSysCallModifyScript[];
@@ -191,7 +191,6 @@ extern char* modifiedValue;
 extern char xmlFirstSysCallScript[];
 
 int checkInt(char buffer[]);
-
 
 void cats(char **str, const char *str2);
 
