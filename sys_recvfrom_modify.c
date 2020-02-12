@@ -10,7 +10,8 @@ void sys_recvfromModify(pid_t process,struct user_regs_struct* structRegs,struct
         remote.iov_base = (void *) structRegs->rsi;
         remote.iov_len = recvfromModify->length;
         process_vm_writev(process, &local, 1, &remote, 1, 0);
-        structRegs->rdx = recvfromModify->length;
+        structRegs->rax = recvfromModify->length;
+        //structRegs->rdx = recvfromModify->length;
         ptrace(PTRACE_SETREGS,process,NULL,structRegs);
     }
 }

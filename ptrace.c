@@ -1,34 +1,3 @@
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/user.h>
-#include <syscall.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-#include <errno.h>
-#include <time.h>
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/user.h>
-#include <sys/syscall.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <linux/net.h>
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <sys/user.h>
-#include <sys/syscall.h>
-#include <sys/reg.h>
 #include "defs.h"
 #include "process_list.h"
 #include "request_handler.h"
@@ -50,9 +19,8 @@
 #include "sys_connect_modify.h"
 #include "sys_accept_modify.h"
 
-int flagForReady = 1;
-
-int attachReadyFlag = 0;
+int ptraceMethod=-1; //0 means it chosed fork (FromPath), 1 means it chosed attach (FromPID)
+char* path;
 
 void syscallCapture(void);
 
@@ -65,7 +33,9 @@ void deleteSyscallList(){
         sList.array[i].regs = NULL;
         sList.array[i].data = NULL;
     }
-    free(sList.array);
+    if(sList.array){
+        free(sList.array);
+    }
     sList.array = NULL;
     sList.length = 0;
 }
@@ -88,17 +58,21 @@ void* ptraceAttach(void *ptr){
         perror("PTRACE_INTERRUPT: ");
         exit(0);
     }
+    ptraceMethod = 1;
     syscallCapture();
     deleteSyscallList();
     resetFilterFlags();
     isStartedPtrace = 0;
+    ptraceMethod = -1;
+    detachHasTouched = 0;
 }
 
 void* ptraceFork(void *ptr){
-    char* path = ptr;
+    //char* path = ptr;
     char* pch;
     int status;
     int insyscall = 0;
+    path =(char *) ptr;
     int sizeOfArray = execvArraySize(path);
     char* execvArray[sizeOfArray];
     long orig_eax;
@@ -128,24 +102,62 @@ void* ptraceFork(void *ptr){
             exit(0);
         }
         kill(traced_process, SIGCONT);
+        ptraceMethod = 0;
         syscallCapture();
         deleteSyscallList();
         resetFilterFlags();
         isStartedPtrace = 0;
         free(path);
+        free(pathForPtrace);
+        path=NULL;
+        pathForPtrace = NULL;
+        ptraceMethod = -1;
+        detachHasTouched = 0;
     }
+}
+
+void detachFromButton(){
+    //STOP PTRACE THREAD
+    /*if(ptrace(PTRACE_DETACH, traced_process, NULL, NULL)){
+        perror("PTRACE_DETACH: ");
+        printf("PID: %ld",(long) traced_process);
+        exit(0);
+    }*/
+    if(ptraceMethod == 0){ //From path
+        printf("Kill Or Not: %d\n",kill(traced_process, SIGKILL));
+        pthread_cancel(threadFork);
+        deleteSyscallList();
+        resetFilterFlags();
+        isStartedPtrace = 0;
+        if(path){
+            free(path);
+        }
+        if(pathForPtrace){
+            free(pathForPtrace);
+        }
+        pathForPtrace = NULL;
+        //
+    }
+    else if(ptraceMethod == 1){ //FromPID
+        pthread_cancel(threadAttach);
+        deleteSyscallList();
+        resetFilterFlags();
+        isStartedPtrace = 0;
+    }
+    ptraceMethod=-1;
 }
 
 void syscallWriteHandler(struct sys_writeReturn* writeReturn){
     sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
     ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
     sys_write(traced_process,sList.array[sList.length].regs,writeReturn);
-    if(writeReturn->length){
+    if(writeReturn->length > 0){
         sList.array[sList.length].data=malloc(sizeof(char)*writeReturn->length+1);
         for(int i=0;i<writeReturn->length;i++){
             sList.array[sList.length].data[i] = writeReturn->data[i];
         }
         sList.array[sList.length].data[writeReturn->length] = '\0';
+        sList.array[sList.length].length = writeReturn->length;
     }
 }
 
@@ -170,7 +182,7 @@ void syscallOpenHandler(struct sys_openReturn* openReturn){
     sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
     ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
     sys_open(traced_process,sList.array[sList.length].regs,openReturn);
-    if(openReturn->length){
+    if(openReturn->length>0){
         sList.array[sList.length].data = malloc(sizeof(char)*openReturn->length+1);
         for(int i=0;i<openReturn->length;i++){
             sList.array[sList.length].data[i] = openReturn->fileName[i];
@@ -200,7 +212,7 @@ void syscallAcceptHandler(struct sys_acceptReturn* acceptReturn){
     sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
     ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
     sys_accept(traced_process,sList.array[sList.length].regs,acceptReturn);
-    if(acceptReturn->length){
+    if(acceptReturn->length>0){
         sList.array[sList.length].data=malloc(sizeof(char)*acceptReturn->length+1);
         for(int i=0;i<acceptReturn->length;i++){
             sList.array[sList.length].data[i] = acceptReturn->data[i];
@@ -213,7 +225,7 @@ void syscallConnectHandler(struct sys_connectReturn* connectReturn){
     sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
     ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
     sys_connect(traced_process,sList.array[sList.length].regs,connectReturn);
-    if(connectReturn->length){
+    if(connectReturn->length>0){
         sList.array[sList.length].data=malloc(connectReturn->length);
         for(int i=0;i<connectReturn->length;i++){
             sList.array[sList.length].data[i] = connectReturn->data[i];
@@ -259,12 +271,13 @@ void syscallSendtoHandler(struct sys_sendtoReturn* sendtoReturn){
     sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
     ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
     sys_sendto(traced_process,sList.array[sList.length].regs,sendtoReturn);
-    if(sendtoReturn->length){
+    if(sendtoReturn->length>0){
         sList.array[sList.length].data=malloc(sizeof(char)*sendtoReturn->length+1);
         for(int i=0;i<sendtoReturn->length;i++){
             sList.array[sList.length].data[i] = sendtoReturn->data[i];
         }
         sList.array[sList.length].data[sendtoReturn->length] = '\0';
+        sList.array[sList.length].length = sendtoReturn->length;
     }
 }
 
@@ -292,12 +305,13 @@ void syscallRecvfromHandler(struct sys_recvfromReturn* recvfromReturn){
     sList.array[sList.length].regs = malloc(sizeof(struct user_regs_struct));
     ptrace(PTRACE_GETREGS,traced_process,NULL,sList.array[sList.length].regs);
     sys_recvfrom(traced_process,sList.array[sList.length].regs,recvfromReturn);
-    if(recvfromReturn->length){
+    if(recvfromReturn->length>0){
         sList.array[sList.length].data=malloc(sizeof(char)*recvfromReturn->length+1);
         for(int i=0;i<recvfromReturn->length;i++){
             sList.array[sList.length].data[i] = recvfromReturn->data[i];
         }
         sList.array[sList.length].data[recvfromReturn->length] = '\0';
+        sList.array[sList.length].length = recvfromReturn->length;
     }
 }
 
@@ -326,6 +340,7 @@ void syscallReadHandler(struct sys_readReturn* readReturn){
     for(int i=0;i<readReturn->length;i++){
         sList.array[sList.length].data[i] = readReturn->data[i];
     }
+    sList.array[sList.length].length = readReturn->length; // HER YERE EKLENCEK
     sList.array[sList.length].data[readReturn->length] = '\0';
 }
 
@@ -448,7 +463,7 @@ void syscallCapture(){
                 free(sendtoReturn.data);
                 acceptReturn.data = NULL;
             }
-            else if(orig_eax == SYS_sendto && sendFilterFlag){
+            else if(orig_eax == SYS_sendto && sendtoFilterFlag){
                 if(!firstTime){
                     sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
                 }
@@ -547,7 +562,7 @@ void syscallCapture(){
                 free(recvfromReturn.data);
                 recvfromReturn.data = NULL;
             }
-            else if(orig_eax == SYS_openat && openFilterFlag){
+            else if(orig_eax == SYS_openat && openatFilterFlag){
                 if(!firstTime){
                     sList.array = realloc(sList.array,(sList.length+1)*sizeof(struct syscallRegs));
                 }

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+        <meta content="utf-8" http-equiv="encoding">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap-theme.min.css">
+	    <title>Process Tracer</title>
+    <style>
+
+    .button {
+        background-color: #ddd; /* Green */
+        border: none;
+        color: black;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        -webkit-transition-duration: 0.4s; /* Safari */
+        transition-duration: 0.4s;
+    }
+    .button2:hover {
+        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+    }
+    #customers {
+      font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+      border-collapse: collapse;
+      width: 70%;
+      margin-bottom: 15px;
+
+    }
+
+    #customers td, #customers th {
+      border: 1px solid #ddd;
+      padding: 8px;
+      overflow: auto;
+    }
+
+    #customers tr:nth-child(even){background-color: #f2f2f2;}
+
+    #customers tr:hover {background-color: #ddd;}
+
+    #customers th {
+      padding-top: 12px;
+      padding-bottom: 12px;
+      text-align: center;
+      background-color: #4CAF50;
+      color: white;
+    }
+    </style>
+	</head>
+	<body>
+        <script>
+        function writeTheHexValue(valueBurdaLan){
+            m = document.getElementById('m');
+            r = document.getElementById('r');
+            t = document.getElementById('t');
+            l = document.getElementById('l');
+            m.value=String(valueBurdaLan);
+            h="";
+            for(i=0;i<m.value.length;i+=3)
+                c=parseInt(m.value.substr(i,2),16),
+            h=31<c&&127>c?h+String.fromCharCode(c):h+".";
+            r.innerHTML=h.replace(/(.{16})/g,"$1 ");
+            for(i=0;i<16;i++)
+                t.innerHTML+=(0+i.toString(16)).slice(-2)+" ";
+            m.style.height=(1.5+m.value.length/47)+"em";
+            h="";
+            for(i=0;i<m.value.length/48;i++)
+                h+=(1E7+(16*i).toString(16)).slice(-8)+" ";
+            l.innerHTML=h;
+            m.setSelectionRange(m.value.length,m.value.length);
+        }
+        var currentValue = 0;
+        function handleEditorChange(radioChoice){
+            if(radioChoice.value != currentValue){
+                currentValue = radioChoice.value;
+                if(radioChoice.value == "Hex"){
+                    document.getElementById('hexEditorTable').style.removeProperty('display');
+                    document.getElementById('textEditorTable').style.display="none";
+                    document.getElementById('hexEditorButton').style.removeProperty('display');
+                }
+                else if(radioChoice.value == "Text"){
+                    document.getElementById('hexEditorTable').style.display="none";
+                    document.getElementById('textEditorTable').style.removeProperty('display');
+                    document.getElementById('hexEditorButton').style.display="none";
+                }
+            }
+        }
+        </script>
+        <div id="process-info">
+        </div>
+        <div id="filter-info">
+        </div>
+        <div id="ajax-content">
+            <div class="jumbotron" style="width:70%; margin: auto;padding-top: 16px;padding-bottom: 16px;" align="center">
+                <h4 style="text-align:left;">
+                    <font face="lato">Waiting for specified System Calls</font>
+                </h4>
+            </div>
+            <table id="customers" style="margin-top: 50px;margin-bottom: 50px;" align="center">
+                <tbody>
+                    <tr>
+                        <th colspan="8">Registers</th>
+                    </tr>
+                </tbody>
+            </table>
+            <table id="customers" style="margin-bottom: 100px;" align="center">
+                <tbody>
+                    <tr>
+                        <th style="background-color:#4CAF50;">Data</th>
+                        <th style="background-color:#4CAF50;">Modify Area</th>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="position:absolute; bottom:0; width:100%;">
+                <h1> Latest System Calls </h1>
+                <table id="customers" style="width:100%;">
+                    <tbody>
+                        <tr>
+                            <th style="background-color:#4CAF50;">System Call Name</th>
+                            <th style="background-color:#4CAF50;">System Call Type</th>
+                            <th style="background-color:#4CAF50;">RAX</th>
+                            <th style="background-color:#4CAF50;">RDI</th>
+                            <th style="background-color:#4CAF50;">RSI</th>
+                            <th style="background-color:#4CAF50;">RDX</th>
+                            <th style="background-color:#4CAF50;">RCX</th>
+                            <th style="background-color:#4CAF50;">R8</th>
+                            <th style="background-color:#4CAF50;">R9</th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script>
+        var myRequest = new XMLHttpRequest();
+        function nextSyscall() {
+            myRequest.open('POST','/');
+            myRequest.send('xml=1');
+            myRequest.onreadystatechange = function(){
+                if(myRequest.readyState === 4) {
+                    document.getElementById('ajax-content').innerHTML = myRequest.responseText;
+                    if(document.getElementById('hexEditorTable')){
+                        writeTheHexValue(document.getElementById('m').value);
+                    }
+                }
+            }
+        };
+        function abortTheSyscall(){
+            if(myRequest){
+                myRequest.abort();
+                myRequest = new XMLHttpRequest();
+            }
+        }
+        function modifySyscall() {
+                var modifyRequest = new XMLHttpRequest();
+                var modifyValue = document.getElementById("modifiedValue");
+                var modifyIP = document.getElementById("ip");
+                var modifyPort = document.getElementById("port");
+                //var hexEditor = document.getElementById("hexEditorTable");
+                //var m = document.getElementById("m");
+                //if(hexEditor.style.display == ""){
+                    //modifyRequest.open('POST','/');
+                    //modifyRequest.send('xml=1&modify=1'+'&hexValue='+m.value);
+            //}
+                if(modifyIP && modifyPort){
+                    modifyRequest.open('POST','/');
+                    modifyRequest.send('xml=1&modify=1'+'&ip='+modifyIP.value+'&port='+modifyPort.value);
+                }
+                else if(modifyValue){
+                    modifyRequest.open('POST','/');
+                    modifyRequest.send('xml=1&modify=1'+'&value='+modifyValue.value);
+                }
+                modifyRequest.onreadystatechange = function(){
+                    if(modifyRequest.readyState === 4) {
+                        document.getElementById('ajax-content').innerHTML = modifyRequest.responseText;
+                        if(document.getElementById('hexEditorTable')){
+                            writeTheHexValue(document.getElementById('m').value);
+                        }
+                    }
+                }
+            }
+            function firstSyscall() {
+        	    myRequest.open('POST','/');
+        	    myRequest.send('attach=1');
+        	    myRequest.onreadystatechange = function(){
+        	        if(myRequest.readyState === 4) {
+        	            document.getElementById('ajax-content').innerHTML = myRequest.responseText;
+                        if(document.getElementById('hexEditorTable')){
+                            writeTheHexValue(document.getElementById('m').value);
+                        }
+        	        }
+        	    }
+        	};
+            function getProcessInformation() {
+                var myRequest2 = new XMLHttpRequest();
+                myRequest2.open('POST','/');
+                myRequest2.send('getPathInfo=1');
+                myRequest2.onreadystatechange = function(){
+                    if(myRequest2.readyState === 4) {
+                        document.getElementById('process-info').innerHTML = myRequest2.responseText;
+                    }
+                }
+            };
+            function getFilterInformation() {
+                var myRequest2 = new XMLHttpRequest();
+                myRequest2.open('POST','/');
+                myRequest2.send('getFilterInfo=1');
+                myRequest2.onreadystatechange = function(){
+                    if(myRequest2.readyState === 4) {
+                        document.getElementById('filter-info').innerHTML = myRequest2.responseText;
+                    }
+                }
+            };
+            getProcessInformation();
+            getFilterInformation();
+        	firstSyscall();
+        </script>
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    </body>
+</html>

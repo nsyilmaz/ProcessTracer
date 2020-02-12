@@ -177,7 +177,8 @@ void* addProcessList(void* ptr){
             DIR *procDirectory = opendir("/proc"); // Open proc directory and visit all directories
             if(procDirectory == NULL){
                 perror("Can't open the dirs");
-                exit(0);
+                //exit(0);
+                continue;
             }
             pList.length++; // hold number of processes
             pList.array = malloc(sizeof(struct process)); //here we take a memory region from heap
@@ -202,20 +203,35 @@ void* addProcessList(void* ptr){
                     fileDescriptorForProcessInfo = fopen(cmdPath,"r"); // Copy contents of cmdline arguments
                     if(fileDescriptorForProcessInfo == NULL){
                         perror("Can't open process' cmdline file: ");
-                        exit(0);
+                        //exit(0);
+                        //fclose(fileDescriptorForProcessInfo);
+                        freeProcessList();
+                        closedir(procDirectory);
+                        procDirectory = NULL;
+                        addProcessList(ptr);
+                        break;
                     }
                     takeCommandLineArguments(fileDescriptorForProcessInfo);
                     fclose(fileDescriptorForProcessInfo); //Close cmdline arguments file
                     fileDescriptorForProcessInfo = fopen(statusPath,"r"); //Open status file
                     if(fileDescriptorForProcessInfo == NULL ) {
                         perror("Can't open process' status file: ");
-                        exit(0);
+                        //fclose(fileDescriptorForProcessInfo);
+                        //exit(0);
+                        //continue;
+                        freeProcessList();
+                        closedir(procDirectory);
+                        procDirectory = NULL;
+                        addProcessList(ptr);
+                        break;
                     }
                     takeProcessStatusInformation(fileDescriptorForProcessInfo);
                     fclose(fileDescriptorForProcessInfo);
                 }
             }
-            closedir(procDirectory);
+            if(procDirectory){
+                closedir(procDirectory);
+            }
             processListStateFlag = 0;
         }
     }

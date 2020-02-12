@@ -32,6 +32,8 @@ int main(void){
         perror("bind error");
         close(fd_server);
     }
+    printf("\e]8;;http://127.0.0.1:8081\e\\Click to open interface\e]8;;\e\\\n");
+
     while(1){
         if(listen(fd_server, 10) != 0) {
             perror("Listen Error");
@@ -41,10 +43,10 @@ int main(void){
             perror("Accept Error");
         }
         pthread_create(&httpThreads[threadCount], NULL, requestHandler, &connfd[threadCount]);		//create a thread and receive data
-        pthread_join(httpThreads[threadCount], (void**) &returnValue);												//finish the thread;
-        if(*returnValue == 1){
-            break;
-        }
+        //pthread_join(httpThreads[threadCount], (void**) &returnValue);												//finish the thread;
+        //if(*returnValue == 1){
+        //    break;
+        //}
         threadCount++;
         connfd = realloc(connfd,(threadCount+1)*sizeof(int));
         httpThreads = realloc(httpThreads,(threadCount+1)*sizeof(pthread_t));

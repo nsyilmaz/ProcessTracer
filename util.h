@@ -84,15 +84,13 @@ int execvArraySize(char* cursor);
 
 const char *syscallName(long call);
 
-extern char htmlStartWithCSS[];
-
-extern char end[];
-
 extern char responseHeader[];
 
-extern char responseEnd[];
+extern char htmlRegisterStart[];
 
-extern char mainPanelHTML[];
+extern int detachHasTouched;
+
+extern char responseEnd[];
 
 struct process{
     char *pid;
@@ -109,6 +107,7 @@ struct processList{
 
 struct syscallRegs{
     char* data;
+    int length;
     struct user_regs_struct* regs;
     int entry_exit_flag;
 };
@@ -118,9 +117,17 @@ struct syscallList{
     struct syscallRegs* array;
 };
 
+extern char finishWithoutCatchResponse[];
+
 extern int port;
 
 extern char* ipaddr;
+
+extern char textHexSwitchButton[];
+
+extern char restOfHexEditor[];
+
+extern char restOfHexEditor2[];
 
 void ipModifyValueTaker(char* );
 
@@ -134,6 +141,10 @@ extern int processListStateFlag;
 
 extern int flagForNext;
 
+extern char* pathForPtrace;
+
+extern int isFilterChosen;
+
 extern pid_t traced_process;
 
 extern pthread_t threadAttach;
@@ -141,8 +152,6 @@ extern pthread_t threadAttach;
 extern pthread_t threadFork;
 
 extern int isStartedPtrace;
-
-extern char* pathForPtrace;
 
 int ishex(int x);
 
@@ -162,13 +171,11 @@ extern char htmlEnd[];
 
 extern char htmlStart[];
 
-extern char xmlSysCallScript[];
-
 extern int readFilterFlag;
 
 extern int writeFilterFlag;
 
-extern int openFilterFlag;
+extern int openatFilterFlag;
 
 extern int acceptFilterFlag;
 
@@ -176,19 +183,15 @@ extern int connectFilterFlag;
 
 extern int closeFilterFlag;
 
-extern int sendFilterFlag;
+extern int sendtoFilterFlag;
 
 extern int recvFilterFlag;
 
-extern char xmlProcessListScript[];
-
-extern char xmlSysCallModifyScript[];
+extern struct process* chosenProcess;
 
 extern int modify;
 
 extern char* modifiedValue;
-
-extern char xmlFirstSysCallScript[];
 
 int checkInt(char buffer[]);
 
@@ -197,3 +200,5 @@ void cats(char **str, const char *str2);
 struct process* searchByPID(char *pid);
 
 void getdata(pid_t child, long addr,char *str, int len);
+
+char* stringToHex(char* string, int lengthOfString);

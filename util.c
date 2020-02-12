@@ -1,20 +1,25 @@
 #include "defs.h"
 #include "util.h"
-#include <sys/uio.h>
+
+int detachHasTouched = 0;
 
 int modify = 0;
 
 int port;
 
+int isFilterChosen = 0;
+
 char* ipaddr= NULL;
 
 char* modifiedValue = NULL;
+
+char* pathForPtrace = NULL;
 
 int readFilterFlag = 0;
 
 int writeFilterFlag = 0;
 
-int openFilterFlag = 0;
+int openatFilterFlag = 0;
 
 int acceptFilterFlag = 0;
 
@@ -22,7 +27,7 @@ int connectFilterFlag = 0;
 
 int closeFilterFlag = 0;
 
-int sendFilterFlag = 0;
+int sendtoFilterFlag = 0;
 
 int recvFilterFlag = 0;
 
@@ -211,153 +216,165 @@ int umoven_peekdata(const int pid, kernel_ulong_t addr, unsigned int len, char *
     return 0;
 }
 
-char* pathForPtrace = NULL;
-
 char responseHeader[] = "HTTP/1.1 200 OK\r\n"
 	"Content-Type: text/html; charset=UTF-8\r\n\r\n";
 
 char htmlStart[] = "<!DOCTYPE html>\n"
 	"<html>\n"
 	"<head>\n"
+	"<style>\n"
+	".hexEditorCSS{margin:0;padding:0;vertical-align:top;font:1em/1em courier}\n"
+	"#m{height:1.5em;resize:none;overflow:hidden}\n"
+	"#t{padding:0 2px}\n"
+	"#w{position:absolute;opacity:.001}\n"
+	"</style>\n"
 	"<title>Process Tracer</title>\n"
 	"</head>\n"
 	"<body>\n";
 
+char htmlRegisterStart[] = "<!DOCTYPE html>\n"
+		"<html>\n"
+		"<head>\n"
+		"<style>\n"
+		".hexEditorCSS{margin:0;padding:0;vertical-align:top;font:1em/1em courier}\n"
+		"#m{height:1.5em;resize:none;overflow:hidden}\n"
+		"#t{padding:0 2px}\n"
+		"#w{position:absolute;opacity:.001}\n"
+		"</style>\n"
+		"<title>Process Tracer</title>\n"
+		"</head>\n"
+		"<body>\n";
+
+char textHexSwitchButton[] = "<input type=\"radio\" onclick=\"handleEditorChange(this);\" name=\"myRadios\"  value=\"Text\" checked/>Text\n"
+    "<input type=\"radio\" name=\"myRadios\" onclick=\"handleEditorChange(this);\" value=\"Hex\" /> Hex\n";
+
+char restOfHexEditor[] = "<table border class='hexEditorCSS' id=\"hexEditorTable\" style=\"display:none\">\n"
+	"<td class='hexEditorCSS' >\n"
+	"<pre class='hexEditorCSS' >\n"
+	"</td>\n"
+	"<td id=t class='hexEditorCSS'>\n"
+	"<tr class='hexEditorCSS'>\n"
+	"<td id=l class='hexEditorCSS' width=80>00000000</td>\n"
+	"<td class='hexEditorCSS'>\n"
+	"<textarea spellcheck=false id=m class='hexEditorCSS' oninput='\n"
+	"b=value.substr(0,selectionStart).replace(/[^0-9A-F]/ig,\"\").replace(/(..)/g,\"$1 \").length;\n"
+	"value=value.replace(/[^0-9A-F]/ig,\"\").replace(/(..)/g,\"$1 \").replace(/ $/,\"\").toUpperCase();\n"
+	"style.height=(1.5+value.length/47)+\"em\";\n"
+	"h=\"\";\n"
+	"for(i=0;i<value.length/48;i++)\n"
+	"h+=(1E7+(16*i).toString(16)).slice(-8)+\" \";\n"
+	"l.innerHTML=h;\n"
+	"h=\"\";\n"
+	"for(i=0;i<value.length;i+=3)\n"
+	"c=parseInt(value.substr(i,2),16),\n"
+	"h=31<c&&127>c?h+String.fromCharCode(c):h+\".\";\n"
+	"r.innerHTML=h.replace(/(.{16})/g,\"$1 \");\n"
+	"if(value[b]==\" \")\n"
+	"b--;\n"
+	"setSelectionRange(b,b)' cols=48>\n";
+
+char restOfHexEditor2[]=	"</textarea>\n"
+	"</td>\n"
+	"</td>\n"
+	"<td width=160 id=r class='hexEditorCSS'>.</td>\n"
+	"</table>\n"
+	"<button onclick= 'modifySyscall()' id='hexEditorButton'  style=\"display:none\"> Modify & Continue </button></tr>\n";
+
 struct AJAXList* headSysCallList;
+
+struct process* chosenProcess = NULL;
 
 int counterForDeneme = 0;
 
-char xmlSysCallScript[] = "<div id=\"ajax-content\">\n"
-	"</div>\n"
-	"<script>\n"
-	"function nextSyscall() {\n"
-	"var myRequest = new XMLHttpRequest(); \n"
-	"myRequest.open('POST','/');\n"
-	"myRequest.send('xml=1');\n"
-	"myRequest.onreadystatechange = function(){ \n"
-	"if(myRequest.readyState === 4) {\n"
-	"document.getElementById('ajax-content').innerHTML = myRequest.responseText; \n"
-	"}\n"
-	"}\n"
-	"};\n"
-	"</script>\n";
-
-char xmlFirstSysCallScript[] = "<div id=\"ajax-content\">\n"
-	"</div>\n"
-	"<script>\n"
-	"function firstSyscall() {\n"
-	"var myRequest = new XMLHttpRequest(); \n"
-	"myRequest.open('POST','/');\n"
-	"myRequest.send('attach=1');\n"
-	"myRequest.onreadystatechange = function(){ \n"
-	"if(myRequest.readyState === 4) {\n"
-	"document.getElementById('ajax-content').innerHTML = myRequest.responseText; \n"
-	"}\n"
-	"}\n"
-	"};\n"
-	"firstSyscall();\n"
-	"</script>\n";
-
-char xmlSysCallModifyScript[] = "<script>\n"
-	"function modifySyscall() {\n"
-	"var modifyRequest = new XMLHttpRequest();\n"
-	"var modifyValue = document.getElementById(\"modifiedValue\");"
-	"var modifyIP = document.getElementById(\"ip\");"
-	"var modifyPort = document.getElementById(\"port\");"
-	"if(modifyIP && modifyPort){\n"
-	"modifyRequest.open('POST','/');\n"
-	"modifyRequest.send('xml=1&modify=1'+'&ip='+modifyIP.value+'&port='+modifyPort.value);\n"
-	"}\n"
-	"else if(modifyValue){"
-	"modifyRequest.open('POST','/');\n"
-	"modifyRequest.send('xml=1&modify=1'+'&value='+modifyValue.value);\n"
-	"}\n"
-	"modifyRequest.onreadystatechange = function(){ \n"
-	"if(modifyRequest.readyState === 4) {\n"
-	"document.getElementById('ajax-content').innerHTML = modifyRequest.responseText; \n"
-	"}\n"
-	"}\n"
-	"};\n"
-	"</script>\n";
+char finishWithoutCatchResponse[] = "<div class='jumbotron' style='width:70%; margin: auto;padding-top: 16px;padding-bottom: 16px;' align='center'>\n"
+	"<h4 style='text-align:left;'>\n"
+		"<font face='lato'>Attached Process has finished and It hasn't made any system call that specified.</font>\n"
+	"</h4>\n"
+"</div>\n"
+"<table id='customers' style='margin-top: 50px;margin-bottom: 50px;' align='center'>\n"
+	"<tbody>\n"
+		"<tr>\n"
+			"<th colspan='8'>Registers</th>\n"
+		"</tr>\n"
+	"</tbody>\n"
+"</table>\n"
+"<table id='customers' style='margin-bottom: 100px;' align='center'>\n"
+	"<tbody>\n"
+		"<tr>\n"
+			"<th style='background-color:#4CAF50;'>Data</th>\n"
+			"<th style='background-color:#4CAF50;'>Modify Area</th>\n"
+		"</tr>\n"
+	"</tbody>\n"
+"</table>\n"
+"<div style='position:absolute; bottom:0; width:100%;'>\n"
+	"<h1> Latest System Calls </h1>\n"
+	"<table id='customers' style='width:100%;'>\n"
+		"<tbody>\n"
+			"<tr>\n"
+				"<th style='background-color:#4CAF50;'>System Call Name</th>\n"
+				"<th style='background-color:#4CAF50;'>System Call Type</th>\n"
+				"<th style='background-color:#4CAF50;'>RAX</th>\n"
+				"<th style='background-color:#4CAF50;'>RDI</th>\n"
+				"<th style='background-color:#4CAF50;'>RSI</th>\n"
+				"<th style='background-color:#4CAF50;'>RDX</th>\n"
+				"<th style='background-color:#4CAF50;'>RCX</th>\n"
+				"<th style='background-color:#4CAF50;'>R8</th>\n"
+				"<th style='background-color:#4CAF50;'>R9</th>\n"
+			"</tr>\n"
+		"</tbody>\n"
+	"</table>\n"
+"</div>\n";
 
 char htmlEnd[] = "</body>\n"
 	"</html>\n";
 
-char htmlStartWithCSS[] = "<!DOCTYPE html>\n"
-	"<html>\n"
-	"<head>\n"
-	"<style>\n"
-	"table, th, td { \n"
-	"border: 1px solid black; \n "
-	"border-collapse: collapse; \n "
-	"}\n"
-	"#path {\n"
-	"margin-left:200px;"
-	"margin-bottom:50px;"
-	"}\n"
-	"</style>\n"
-	"</head>\n"
-	"<body>\n";
-
-char mainPanelHTML[] = "<form action=\"/\" method=\"post\">\n"
-	"<input type=\"hidden\" id=\"execution\" name=\"operation\" value=\"0\">\n"
-	"<button id=\"path\" type=\"submit\">Exit</button>\n"
-	"</form>\n"
-	"<form action=\"/\" method=\"post\">\n"
-	"<p style=\"margin-left:200px;\">Path</p> \n <br>"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Read\" style=\"margin-left:200px;\"> Read System Call\n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Write\"> Write System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Open\"> Open System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Accept\"> Accept System Call     <br>\n"
-	"<input style=\"margin-left:200px;\" type=\"checkbox\" name=\"filter\" value=\"Connect\"> Connect System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Close\"> Close System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Send\"> Send System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Recv\"> Recv System Call     <br>\n"
-	"<input type=\"text\" name=\"path\"placeholder=\"Full Path to binary\" id=\"execution\" style =\"margin-left:200px\"></br>\n"
-	"<button id=\"path\" type=\"submit\">Submit</button>\n"
-	"</form>"
-	"<form action=\"/\" method=\"post\">\n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Read\" style=\"margin-left:200px;\"> Read System Call\n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Write\"> Write System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Open\"> Open System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Accept\"> Accept System Call     <br>\n"
-	"<input style=\"margin-left:200px;\" type=\"checkbox\" name=\"filter\" value=\"Connect\"> Connect System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Close\"> Close System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Send\"> Send System Call     \n"
-	"<input type=\"checkbox\" name=\"filter\" value=\"Recv\"> Recv System Call     <br>\n"
-	"<div id='process-table'>\n";
-
-char tableStart[] = "<table  width=\"50%\" id=\"tab\" style=\"margin-left:200px;\">\n"
-	"<thead>\n"
+char tableStart[] = "<table  width=\"50%\" id=\"customers\" align=\"left\">\n"
+	"<tbody>\n"
 	"<tr>\n"
 	"<th>Processes</th>\n"
 	"<th> PID</th>\n"
 	"<th> PPID </th>\n"
 	"<th> Owner </th>\n"
 	"<th> Command Line Arguments </th>\n"
-	"<th> Choose </th>"
+	"<th> Select </th>"
 	"</tr>\n"
-	"</thead> \n"
-	"<tbody id=\"tablediv\">\n";
+	"<tbody>\n";
 
-char tableEnd[] = "<tr><td> <input type=\"submit\" value=\"Submit\"></td></tr>\n"
+char tableEnd[] = //"<tr><td> <input class='button button2' type=\"submit\" value=\"Submit\"></td></tr>\n"
 	"</tbody>\n"
-	"</table>\n"
-	"</div>\n"
-	"</form>\n";
+	"</table>\n";
 
-char xmlProcessListScript[] = "<script>\n"
-	"setInterval(function(){ \n"
-	"var myRequest = new XMLHttpRequest(); \n"
-	"myRequest.open('POST','/');\n"
-	"myRequest.send('xml=2');\n"
-	"myRequest.onreadystatechange = function(){ \n"
-	"if(myRequest.readyState === 4) {\n"
-	"document.getElementById('process-table').innerHTML = myRequest.responseText; \n"
-	"}\n"
-	"}\n"
-	"},5000);\n"
-	"</script>\n";
+char systemCallTable[] = "<table id='table1' width='30%' border='1'>\n"
+	"<thead>\n"
+		"<tr>\n"
+			"<th>Col1</th>\n"
+			"<th>Col2</th>\n"
+			"<th>Col3</th>\n"
+		"</tr>\n"
+	"</thead>\n"
+	"<tbody>\n"
+		"<tr>\n"
+			"<td>info</td>\n"
+			"<td>info</td>\n"
+			"<td>info</td>\n"
+		"</tr>\n"
+		"<tr>\n"
+			"<td>info</td>\n"
+			"<td>info</td>\n"
+			"<td>info</td>\n"
+		"</tr>\n"
+		"<tr>\n"
+			"<td>info</td>\n"
+			"<td>info</td>\n"
+			"<td>info</td>\n"
+		"</tr>\n"
+	"</tbody>\n"
+"</table>\n"
+"<table id='header-fixed' style='position: fixed; display:none; top: 0px; background-color: white;' width='30%' border='1'>\n"
+"</table>";
+	//"</div>\n"
+	//"</form>\n"
+
 
 struct processList pList = {0,NULL};
 
@@ -428,12 +445,13 @@ int checkInt(char buffer[]){
 void resetFilterFlags(){
 	readFilterFlag = 0;
 	writeFilterFlag = 0;
-	openFilterFlag = 0;
+	openatFilterFlag = 0;
 	acceptFilterFlag = 0;
 	connectFilterFlag = 0;
 	closeFilterFlag = 0;
-	sendFilterFlag = 0;
+	sendtoFilterFlag = 0;
 	recvFilterFlag = 0;
+	isFilterChosen = 0;
 }
 
 void cats(char **str, const char *str2) {
@@ -457,6 +475,25 @@ void cats(char **str, const char *str2) {
 		memcpy( *str + strlen(*str), str2, strlen(str2) );
 		free(tmp);
 	}
+}
+
+char* stringToHex(char* string, int lengthOfString){
+	char *hexArray = malloc(sizeof(char)*3*lengthOfString);
+	char *returnedPointer = hexArray;
+	for(int i=0;i<lengthOfString;i++){
+		if(string[i] == '\n'){
+			sprintf(hexArray,"0A");
+		}
+		else{
+			sprintf(hexArray,"%02x",string[i]);
+		}
+		hexArray+=2;
+		sprintf(hexArray," ");
+		hexArray++;
+	}
+	returnedPointer[3*lengthOfString-1] = '\0';
+	return returnedPointer;
+
 }
 
 int flagForNext = 0;
